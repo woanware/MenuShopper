@@ -1,0 +1,64 @@
+@page "/meals"
+@inject MenuShopper.Services.DataService DataService
+
+<PageTitle>Meals</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+    <MudText Typo="Typo.h5">Meals</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Href="/meals/new">
+        Add Meal
+    </MudButton>
+</MudStack>
+
+<MudTable Items="_meals" Hover="true" Dense="true">
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Category</MudTh>
+        <MudTh>Dairy</MudTh>
+        <MudTh>Ingredients</MudTh>
+        <MudTh>Favourite</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Category">@context.Category</MudTd>
+        <MudTd DataLabel="Dairy">@((context.IsDairy) ? "Yes" : "No")</MudTd>
+        <MudTd DataLabel="Ingredients">@context.IngredientCount</MudTd>
+        <MudTd DataLabel="Favourite">
+            <MudIconButton Icon="@(context.IsFavourite ? Icons.Material.Filled.Star : Icons.Material.Filled.StarBorder)" Color="Color.Warning" OnClick="() => ToggleFavouriteAsync(context)" />
+        </MudTd>
+        <MudTd>
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Href="@($"/meals/edit/{context.Id}")" />
+            <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Href="@($"/meals/clone/{context.Id}")" />
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => DeleteMealAsync(context)" />
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    private List<MenuShopper.Models.Meal> _meals = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        await DataService.LoadMealsAsync();
+        _meals = DataService.GetMeals().OrderBy(m => m.Name).ToList();
+    }
+
+    private async Task ToggleFavouriteAsync(MenuShopper.Models.Meal meal)
+    {
+        meal.IsFavourite = !meal.IsFavourite;
+        await DataService.UpdateMealAsync(meal);
+        await LoadAsync();
+    }
+
+    private async Task DeleteMealAsync(MenuShopper.Models.Meal meal)
+    {
+        await DataService.DeleteMealAsync(meal);
+        await LoadAsync();
+    }
+}

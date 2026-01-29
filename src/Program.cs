@@ -1,4 +1,5 @@
 using MenuShopper.Components;
+using MenuShopper.Services;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,6 +10,7 @@ builder.Services.AddMudServices();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddSingleton<DataService>();
 
 var app = builder.Build();
 

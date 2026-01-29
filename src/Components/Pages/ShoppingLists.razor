@@ -1,0 +1,51 @@
+@page "/shopping-lists"
+@inject MenuShopper.Services.DataService DataService
+
+<PageTitle>Shopping Lists</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+    <MudText Typo="Typo.h5">Shopping Lists</MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Href="/menus/new">
+        Create Menu
+    </MudButton>
+</MudStack>
+
+<MudTable Items="_menus" Hover="true" Dense="true">
+    <HeaderContent>
+        <MudTh>Start Date</MudTh>
+        <MudTh>Items</MudTh>
+        <MudTh>Remaining</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Start Date">@context.DisplayDate</MudTd>
+        <MudTd DataLabel="Items">@context.ItemCountText</MudTd>
+        <MudTd DataLabel="Remaining">@context.RemainingCountText</MudTd>
+        <MudTd>
+            <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Href="@($"/shopping-lists/{context.Id}")" />
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => DeleteMenuAsync(context)" />
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    private List<MenuShopper.Models.Menu> _menus = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        await DataService.LoadMealsAsync();
+        await DataService.LoadMenusAsync();
+        _menus = DataService.GetMenus().ToList();
+    }
+
+    private async Task DeleteMenuAsync(MenuShopper.Models.Menu menu)
+    {
+        await DataService.DeleteMenuAsync(menu);
+        await LoadAsync();
+    }
+}

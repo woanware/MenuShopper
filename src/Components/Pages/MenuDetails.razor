@@ -1,0 +1,43 @@
+@page "/menus/{MenuId:guid}"
+@inject MenuShopper.Services.DataService DataService
+
+<PageTitle>Menu Details</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-2">Menu Details</MudText>
+<MudText Typo="Typo.body2" Class="mb-4">@_subtitle</MudText>
+
+<MudTable Items="_meals" Hover="true" Dense="true">
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Category</MudTh>
+        <MudTh>Ingredients</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Category">@context.Category</MudTd>
+        <MudTd DataLabel="Ingredients">@context.IngredientCount</MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    [Parameter] public Guid MenuId { get; set; }
+
+    private string _subtitle = string.Empty;
+    private List<MenuShopper.Models.Meal> _meals = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await DataService.LoadMealsAsync();
+        await DataService.LoadMenusAsync();
+        var menu = DataService.FindMenuById(MenuId);
+        if (menu == null)
+            return;
+
+        _subtitle = $"Menu start date: {menu.DisplayDate}";
+        _meals = menu.MealIds
+            .Select(id => DataService.FindMealById(id))
+            .Where(meal => meal != null)
+            .Cast<MenuShopper.Models.Meal>()
+            .ToList();
+    }
+}

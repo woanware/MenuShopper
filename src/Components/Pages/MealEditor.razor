@@ -1,0 +1,139 @@
+@page "/meals/new"
+@page "/meals/edit/{MealId:guid}"
+@page "/meals/clone/{CloneId:guid}"
+@inject MenuShopper.Services.DataService DataService
+@inject NavigationManager Nav
+
+<PageTitle>@_title</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">@_title</MudText>
+
+<MudPaper Class="pa-4">
+    <MudGrid Spacing="2">
+        <MudItem xs="12" md="6">
+            <MudTextField @bind-Value="_meal.Name" Label="Meal Name" Required="true" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudTextField @bind-Value="_meal.Category" Label="Category" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudCheckBox T="bool" @bind-Value="_meal.IsDairy" Label="Contains Dairy" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudCheckBox T="bool" @bind-Value="_meal.IsFavourite" Label="Favourite" />
+        </MudItem>
+    </MudGrid>
+
+    <MudDivider Class="my-4" />
+
+    <MudText Typo="Typo.subtitle2" Class="mb-2">Ingredients</MudText>
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+        <MudTextField @bind-Value="_newIngredient" Placeholder="Add ingredient" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddIngredient">Add</MudButton>
+    </MudStack>
+
+    <MudList T="string" Dense="true" Class="mt-2">
+        @foreach (var ingredient in _meal.Ingredients)
+        {
+            <MudListItem T="string">
+                <MudText>@ingredient</MudText>
+                <MudSpacer />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => RemoveIngredient(ingredient)" />
+            </MudListItem>
+        }
+    </MudList>
+
+    <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2" Class="mt-4">
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        @if (!_isNew)
+        {
+            <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="Delete">Delete</MudButton>
+        }
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save">Save</MudButton>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public Guid? MealId { get; set; }
+    [Parameter] public Guid? CloneId { get; set; }
+
+    private MenuShopper.Models.Meal _meal = new();
+    private string _newIngredient = string.Empty;
+    private string _title = "Add Meal";
+    private bool _isNew = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await DataService.LoadMealsAsync();
+        if (CloneId.HasValue)
+        {
+            var source = DataService.FindMealById(CloneId.Value);
+            if (source != null)
+            {
+                _meal = new MenuShopper.Models.Meal
+                {
+                    Ingredients = source.Ingredients.ToList()
+                };
+            }
+            _title = "Clone Meal";
+        }
+        else if (MealId.HasValue)
+        {
+            var existing = DataService.FindMealById(MealId.Value);
+            if (existing != null)
+            {
+                _meal = existing;
+                _isNew = false;
+                _title = "Edit Meal";
+            }
+        }
+    }
+
+    private void AddIngredient()
+    {
+        var text = _newIngredient.Trim();
+        if (string.IsNullOrWhiteSpace(text))
+            return;
+
+        if (_meal.Ingredients.Any(i => string.Equals(i, text, StringComparison.OrdinalIgnoreCase)))
+            return;
+
+        _meal.Ingredients.Add(text);
+        _newIngredient = string.Empty;
+    }
+
+    private void RemoveIngredient(string ingredient)
+    {
+        _meal.Ingredients.Remove(ingredient);
+    }
+
+    private async Task Save()
+    {
+        _meal.Name = _meal.Name.Trim();
+        _meal.Category = string.IsNullOrWhiteSpace(_meal.Category) ? "Other" : _meal.Category.Trim();
+        _meal.Ingredients = _meal.Ingredients
+            .Select(i => i.Trim())
+            .Where(i => !string.IsNullOrWhiteSpace(i))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(i => i)
+            .ToList();
+
+        if (string.IsNullOrWhiteSpace(_meal.Name))
+            return;
+
+        if (_isNew)
+            await DataService.AddMealAsync(_meal);
+        else
+            await DataService.UpdateMealAsync(_meal);
+
+        Nav.NavigateTo("/meals");
+    }
+
+    private void Cancel() => Nav.NavigateTo("/meals");
+
+    private async Task Delete()
+    {
+        await DataService.DeleteMealAsync(_meal);
+        Nav.NavigateTo("/meals");
+    }
+}

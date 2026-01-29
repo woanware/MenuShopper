@@ -1,0 +1,65 @@
+@page "/menus/new"
+@inject MenuShopper.Services.DataService DataService
+@inject NavigationManager Nav
+
+<PageTitle>Menu Planning</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Menu Planning</MudText>
+
+<MudPaper Class="pa-4">
+    <MudDatePicker @bind-Date="_startDate" Label="Start date" />
+
+    <MudDivider Class="my-4" />
+
+    <MudText Typo="Typo.subtitle2" Class="mb-2">Select meals</MudText>
+    <MudTable Items="_meals" Hover="true" Dense="true" MultiSelection="true" @bind-SelectedItems="_selectedMeals">
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Category</MudTh>
+            <MudTh>Ingredients</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">@context.Name</MudTd>
+            <MudTd DataLabel="Category">@context.Category</MudTd>
+            <MudTd DataLabel="Ingredients">@context.IngredientCount</MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2" Class="mt-4">
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateMenu" Disabled="@(!_selectedMeals.Any())">
+            Next
+        </MudButton>
+    </MudStack>
+</MudPaper>
+
+@code {
+    private List<MenuShopper.Models.Meal> _meals = [];
+    private HashSet<MenuShopper.Models.Meal> _selectedMeals = [];
+    private DateTime? _startDate = DateTime.Today;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await DataService.LoadMealsAsync();
+        _meals = DataService.GetMeals().OrderBy(m => m.Name).ToList();
+    }
+
+    private async Task CreateMenu()
+    {
+        if (_selectedMeals.Count == 0)
+            return;
+
+        var menu = new MenuShopper.Models.Menu
+        {
+            Date = _startDate ?? DateTime.Today,
+            Meals = _selectedMeals.Select(m => new MenuShopper.Models.MenuMealSelection { MealId = m.Id, IsRescheduled = false }).ToList(),
+            IsLocked = true
+        };
+
+        menu.ShoppingItems = DataService.GenerateShoppingList(menu);
+        await DataService.SaveMenuAsync(menu);
+        Nav.NavigateTo($"/shopping-lists/{menu.Id}");
+    }
+
+    private void Cancel() => Nav.NavigateTo("/menus");
+}

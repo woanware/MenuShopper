@@ -1,0 +1,20 @@
+@page "/settings"
+@inject MenuShopper.Services.DataService DataService
+
+<PageTitle>Settings</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">Settings</MudText>
+
+<MudPaper Class="pa-4">
+    <MudText Typo="Typo.subtitle2">Data folder</MudText>
+    <MudText Typo="Typo.body2" Class="mt-1">@_dataPath</MudText>
+</MudPaper>
+
+@code {
+    private string _dataPath = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        _dataPath = DataService.GetDataFolderPath();
+    }
+}
