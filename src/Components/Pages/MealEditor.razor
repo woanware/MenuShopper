@@ -14,7 +14,12 @@
             <MudTextField @bind-Value="_meal.Name" Label="Meal Name" Required="true" />
         </MudItem>
         <MudItem xs="12" md="6">
-            <MudTextField @bind-Value="_meal.Category" Label="Category" />
+            <MudSelect T="string" Label="Category" @bind-Value="_meal.Category" Dense="true">
+                @foreach (var category in _categories)
+                {
+                    <MudSelectItem T="string" Value="@category">@category</MudSelectItem>
+                }
+            </MudSelect>
         </MudItem>
         <MudItem xs="12" md="6">
             <MudCheckBox T="bool" @bind-Value="_meal.IsDairy" Label="Contains Dairy" />
@@ -27,16 +32,12 @@
     <MudDivider Class="my-4" />
 
     <MudText Typo="Typo.subtitle2" Class="mb-2">Ingredients</MudText>
-    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-4">
         <MudTextField @bind-Value="_newIngredient" Placeholder="Add ingredient" />
         <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Filled" OnClick="AddIngredient" />
     </MudStack>
 
-    <MudTable Items="_meal.Ingredients" Dense="true" Hover="true" Bordered="true" Striped="true" Class="mt-2">
-        <HeaderContent>
-            <MudTh>Ingredient</MudTh>
-            <MudTh></MudTh>
-        </HeaderContent>
+    <MudTable Items="_meal.Ingredients" Dense="true" Hover="true" Bordered="false" Striped="true" Class="mt-2" RowStyle="padding-top:2px;padding-bottom:2px;">
         <RowTemplate>
             <MudTd DataLabel="Ingredient">@context</MudTd>
             <MudTd Class="d-flex justify-end">
@@ -63,10 +64,14 @@
     private string _newIngredient = string.Empty;
     private string _title = "Add Meal";
     private bool _isNew = true;
+    private List<string> _categories = [];
 
     protected override async Task OnInitializedAsync()
     {
         await DataService.LoadMealsAsync();
+        _categories = await DataService.LoadCategoriesAsync();
+        if (_categories.Count == 0)
+            _categories = ["Other"];
         if (CloneId.HasValue)
         {
             var source = DataService.FindMealById(CloneId.Value);

@@ -6,6 +6,7 @@ namespace MenuShopper.Services;
 public class DataService
 {
     private const string MealsFileName = "meals.json";
+    private const string CategoriesFileName = "categories.json";
     private const string MenusFolderName = "Menus";
 
     private readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
@@ -13,14 +14,17 @@ public class DataService
 
     private List<Meal> _meals = [];
     private List<Menu> _menus = [];
+    private List<string> _categories = [];
 
-    private string BaseDataPath => Path.Combine(AppContext.BaseDirectory, "data");
+    private string BaseDataPath => Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "data");
     private const string LegacyDataPath = @"C:\Dev\Personal\MenuAutomater\data";
     private string LegacyMealsFilePath => Path.Combine(LegacyDataPath, MealsFileName);
     private string LegacyMenusFolderPath => Path.Combine(LegacyDataPath, MenusFolderName);
+    private string LegacyCategoriesFilePath => Path.Combine(LegacyDataPath, CategoriesFileName);
 
     private string MealsFilePath => Path.Combine(BaseDataPath, MealsFileName);
     private string MenusFolderPath => Path.Combine(BaseDataPath, MenusFolderName);
+    private string CategoriesFilePath => Path.Combine(BaseDataPath, CategoriesFileName);
 
     public async Task<List<Meal>> LoadMealsAsync()
     {
@@ -103,6 +107,55 @@ public class DataService
     {
         _meals.Remove(meal);
         await SaveMealsAsync();
+    }
+
+    public async Task<List<string>> LoadCategoriesAsync()
+    {
+        if (_categories.Count > 0)
+            return _categories;
+
+        try
+        {
+            if (!File.Exists(CategoriesFilePath))
+            {
+                await TryImportLegacyCategoriesAsync();
+                if (!File.Exists(CategoriesFilePath))
+                {
+                    _categories = [];
+                    return _categories;
+                }
+            }
+
+            var json = await File.ReadAllTextAsync(CategoriesFilePath);
+            _categories = JsonSerializer.Deserialize<List<string>>(json) ?? [];
+        }
+        catch
+        {
+            _categories = [];
+        }
+
+        return _categories;
+    }
+
+    public async Task<bool> TryImportLegacyCategoriesAsync()
+    {
+        try
+        {
+            if (File.Exists(CategoriesFilePath))
+                return false;
+
+            if (!File.Exists(LegacyCategoriesFilePath))
+                return false;
+
+            Directory.CreateDirectory(BaseDataPath);
+            var json = await File.ReadAllTextAsync(LegacyCategoriesFilePath);
+            await File.WriteAllTextAsync(CategoriesFilePath, json);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private void EnsureMenusFolder()
