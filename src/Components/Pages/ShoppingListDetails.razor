@@ -7,12 +7,12 @@
 <MudText Typo="Typo.h5" Class="mb-2">Shopping List</MudText>
 <MudText Typo="Typo.body2" Class="mb-4">@_subtitle</MudText>
 
-<MudPaper Class="pa-4 mb-4">
-    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-        <MudTextField @bind-Value="_newItem" Placeholder="Add extra item" />
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddItem">Add</MudButton>
-    </MudStack>
-</MudPaper>
+    <MudPaper Class="pa-4 mb-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudTextField @bind-Value="_newItem" Placeholder="Add extra item" />
+            <MudIconButton Icon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" OnClick="AddItem" />
+        </MudStack>
+    </MudPaper>
 
 <MudTable Items="_items" Hover="true" Dense="true">
     <HeaderContent>

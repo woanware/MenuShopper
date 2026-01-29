@@ -26,10 +26,8 @@
     </MudTable>
 
     <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2" Class="mt-4">
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateMenu" Disabled="@(!_selectedMeals.Any())">
-            Next
-        </MudButton>
+        <MudIconButton Icon="@Icons.Material.Filled.Close" Variant="Variant.Filled" OnClick="Cancel" />
+        <MudIconButton Icon="@Icons.Material.Filled.Check" Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateMenu" Disabled="@(!_selectedMeals.Any())" />
     </MudStack>
 </MudPaper>
 

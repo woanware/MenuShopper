@@ -5,9 +5,7 @@
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
     <MudText Typo="Typo.h5">Meals</MudText>
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Href="/meals/new">
-        Add Meal
-    </MudButton>
+    <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Filled" Href="/meals/new" />
 </MudStack>
 
 <MudTable Items="_meals" Hover="true" Dense="true">

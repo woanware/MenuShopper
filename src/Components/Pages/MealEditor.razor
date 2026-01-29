@@ -29,27 +29,29 @@
     <MudText Typo="Typo.subtitle2" Class="mb-2">Ingredients</MudText>
     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
         <MudTextField @bind-Value="_newIngredient" Placeholder="Add ingredient" />
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddIngredient">Add</MudButton>
+        <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Filled" OnClick="AddIngredient" />
     </MudStack>
 
-    <MudList T="string" Dense="true" Class="mt-2">
-        @foreach (var ingredient in _meal.Ingredients)
-        {
-            <MudListItem T="string">
-                <MudText>@ingredient</MudText>
-                <MudSpacer />
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => RemoveIngredient(ingredient)" />
-            </MudListItem>
-        }
-    </MudList>
+    <MudTable Items="_meal.Ingredients" Dense="true" Hover="true" Bordered="true" Striped="true" Class="mt-2">
+        <HeaderContent>
+            <MudTh>Ingredient</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Ingredient">@context</MudTd>
+            <MudTd Class="d-flex justify-end">
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => RemoveIngredient(context)" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
 
     <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2" Class="mt-4">
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudIconButton Icon="@Icons.Material.Filled.Close" Variant="Variant.Filled" OnClick="Cancel" />
         @if (!_isNew)
         {
-            <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="Delete">Delete</MudButton>
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" />
         }
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save">Save</MudButton>
+        <MudIconButton Icon="@Icons.Material.Filled.Check" Variant="Variant.Filled" Color="Color.Primary" OnClick="Save" />
     </MudStack>
 </MudPaper>
 
