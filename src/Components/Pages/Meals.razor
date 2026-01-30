@@ -1,5 +1,6 @@
 @page "/meals"
 @inject MenuShopper.Services.DataService DataService
+@inject IDialogService DialogService
 
 <PageTitle>Meals</PageTitle>
 
@@ -56,7 +57,24 @@
 
     private async Task DeleteMealAsync(MenuShopper.Models.Meal meal)
     {
+        if (!await ConfirmDeleteAsync("Delete meal", $"Delete '{meal.Name}'?"))
+            return;
+
         await DataService.DeleteMealAsync(meal);
         await LoadAsync();
+    }
+
+    private async Task<bool> ConfirmDeleteAsync(string title, string message)
+    {
+        var options = new MessageBoxOptions
+        {
+            Title = title,
+            Message = message,
+            YesText = "Delete",
+            CancelText = "Cancel"
+        };
+
+        var result = await DialogService.ShowMessageBox(options, new DialogOptions { CloseOnEscapeKey = true });
+        return result == true;
     }
 }

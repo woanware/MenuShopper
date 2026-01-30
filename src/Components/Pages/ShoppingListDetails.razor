@@ -1,6 +1,7 @@
 @page "/shopping-lists/{MenuId:guid}"
 @inject MenuShopper.Services.DataService DataService
 @inject NavigationManager Nav
+@inject IDialogService DialogService
 
 <PageTitle>Shopping List</PageTitle>
 
@@ -9,7 +10,11 @@
 
     <MudPaper Class="pa-4 mb-4">
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-            <MudTextField @bind-Value="_newItem" Placeholder="Add extra item" />
+            <MudTextField @bind-Value="_newItem"
+                          Placeholder="Add extra item"
+                          Immediate="true"
+                          TextUpdateSuppression="false"
+                          OnKeyDown="HandleAddKeyDown" />
             <MudIconButton Icon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" OnClick="AddItem" />
         </MudStack>
     </MudPaper>
@@ -96,13 +101,41 @@
         _items = _menu.ShoppingItems.ToList();
     }
 
+    private async Task HandleAddKeyDown(KeyboardEventArgs args)
+    {
+        if ((args.Key == "Enter" || args.Key == "NumpadEnter") && !args.Repeat)
+        {
+            await AddItem();
+            await Task.Delay(100);
+            _newItem = string.Empty;
+            StateHasChanged();
+        }
+    }
+
     private async Task DeleteItemAsync(MenuShopper.Models.ShoppingListItem item)
     {
         if (_menu == null)
             return;
 
+        if (!await ConfirmDeleteAsync("Delete item", $"Delete '{item.Ingredient}'?"))
+            return;
+
         _menu.ShoppingItems.RemoveAll(i => i.Id == item.Id);
         await DataService.SaveMenuAsync(_menu);
         _items = _menu.ShoppingItems.ToList();
+    }
+
+    private async Task<bool> ConfirmDeleteAsync(string title, string message)
+    {
+        var options = new MessageBoxOptions
+        {
+            Title = title,
+            Message = message,
+            YesText = "Delete",
+            CancelText = "Cancel"
+        };
+
+        var result = await DialogService.ShowMessageBox(options, new DialogOptions { CloseOnEscapeKey = true });
+        return result == true;
     }
 }

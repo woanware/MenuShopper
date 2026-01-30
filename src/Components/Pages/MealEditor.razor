@@ -3,6 +3,7 @@
 @page "/meals/clone/{CloneId:guid}"
 @inject MenuShopper.Services.DataService DataService
 @inject NavigationManager Nav
+@inject IDialogService DialogService
 
 <PageTitle>@_title</PageTitle>
 
@@ -33,21 +34,29 @@
 
     <MudText Typo="Typo.subtitle2" Class="mb-2">Ingredients</MudText>
     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-4">
-        <MudTextField @bind-Value="_newIngredient" Placeholder="Add ingredient" />
+        <MudTextField @bind-Value="_newIngredient"
+                      Placeholder="Add ingredient"
+                      Immediate="true"
+                      TextUpdateSuppression="false"
+                      OnKeyDown="HandleIngredientKeyDown" />
         <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Filled" OnClick="AddIngredient" />
     </MudStack>
 
-    <MudTable Items="_meal.Ingredients" Dense="true" Hover="true" Bordered="false" Striped="true" Class="mt-2" RowStyle="padding-top:2px;padding-bottom:2px;">
+    <MudTable Items="_meal.Ingredients" Hover="true" Dense="true">
+        <HeaderContent>
+            <MudTh>Ingredient</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Ingredient">@context</MudTd>
-            <MudTd Class="d-flex justify-end">
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => RemoveIngredient(context)" />
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => RemoveIngredientAsync(context)" />
             </MudTd>
         </RowTemplate>
     </MudTable>
 
     <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2" Class="mt-4">
-        <MudIconButton Icon="@Icons.Material.Filled.Close" Variant="Variant.Filled" OnClick="Cancel" />
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Filled" OnClick="Cancel" />
         @if (!_isNew)
         {
             <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" />
@@ -109,8 +118,22 @@
         _newIngredient = string.Empty;
     }
 
-    private void RemoveIngredient(string ingredient)
+    private async Task HandleIngredientKeyDown(KeyboardEventArgs args)
     {
+        if ((args.Key == "Enter" || args.Key == "NumpadEnter") && !args.Repeat)
+        {
+            AddIngredient();
+            await Task.Delay(100);
+            _newIngredient = string.Empty;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RemoveIngredientAsync(string ingredient)
+    {
+        if (!await ConfirmDeleteAsync("Delete ingredient", $"Delete '{ingredient}' from this meal?"))
+            return;
+
         _meal.Ingredients.Remove(ingredient);
     }
 
@@ -140,7 +163,24 @@
 
     private async Task Delete()
     {
+        if (!await ConfirmDeleteAsync("Delete meal", $"Delete '{_meal.Name}'?"))
+            return;
+
         await DataService.DeleteMealAsync(_meal);
         Nav.NavigateTo("/meals");
+    }
+
+    private async Task<bool> ConfirmDeleteAsync(string title, string message)
+    {
+        var options = new MessageBoxOptions
+        {
+            Title = title,
+            Message = message,
+            YesText = "Delete",
+            CancelText = "Cancel"
+        };
+
+        var result = await DialogService.ShowMessageBox(options, new DialogOptions { CloseOnEscapeKey = true });
+        return result == true;
     }
 }

@@ -1,6 +1,7 @@
 @page "/menus"
 @inject MenuShopper.Services.DataService DataService
 @inject NavigationManager Nav
+@inject IDialogService DialogService
 
 <PageTitle>Menus</PageTitle>
 
@@ -21,8 +22,8 @@
         <MudTd DataLabel="Meals">@context.MealCountText</MudTd>
         <MudTd DataLabel="Items">@context.ItemCountText</MudTd>
         <MudTd>
-            <MudIconButton Icon="@Icons.Material.Filled.List" Href="@($"/shopping-lists/{context.Id}")" />
             <MudIconButton Icon="@Icons.Material.Filled.Info" Href="@($"/menus/{context.Id}")" />
+            <MudIconButton Icon="@Icons.Material.Filled.ShoppingCart" Href="@($"/shopping-lists/{context.Id}")" />            
             <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => DeleteMenuAsync(context)" />
         </MudTd>
     </RowTemplate>
@@ -45,7 +46,24 @@
 
     private async Task DeleteMenuAsync(MenuShopper.Models.Menu menu)
     {
+        if (!await ConfirmDeleteAsync("Delete menu", $"Delete menu starting {menu.DisplayDate}?"))
+            return;
+
         await DataService.DeleteMenuAsync(menu);
         await LoadAsync();
+    }
+
+    private async Task<bool> ConfirmDeleteAsync(string title, string message)
+    {
+        var options = new MessageBoxOptions
+        {
+            Title = title,
+            Message = message,
+            YesText = "Delete",
+            CancelText = "Cancel"
+        };
+
+        var result = await DialogService.ShowMessageBox(options, new DialogOptions { CloseOnEscapeKey = true });
+        return result == true;
     }
 }
