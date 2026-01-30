@@ -19,7 +19,7 @@
         </MudStack>
     </MudPaper>
 
-<MudTable Items="_items" Hover="true" Dense="true">
+<MudTable Items="_items" Hover="true" Dense="true" RowStyleFunc="GetRowStyle">
     <HeaderContent>
         <MudTh>Bought</MudTh>
         <MudTh>Item</MudTh>
@@ -75,6 +75,9 @@
         match.IsBought = value;
         await DataService.SaveMenuAsync(_menu);
     }
+
+    private string GetRowStyle(MenuShopper.Models.ShoppingListItem item, int rowNumber)
+        => item.IsBought ? "text-decoration: line-through; opacity: 0.6;" : string.Empty;
 
     private async Task AddItem()
     {

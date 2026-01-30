@@ -21,7 +21,7 @@
         <MudTd DataLabel="Items">@context.ItemCountText</MudTd>
         <MudTd DataLabel="Remaining">@context.RemainingCountText</MudTd>
         <MudTd>
-            <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Href="@($"/shopping-lists/{context.Id}")" />
+            <MudIconButton Icon="@Icons.Material.Filled.ShoppingCart" Href="@($"/shopping-lists/{context.Id}")" />
             <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => DeleteMenuAsync(context)" />
         </MudTd>
     </RowTemplate>
