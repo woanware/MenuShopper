@@ -1,6 +1,8 @@
 @page "/menus/{MenuId:guid}"
+@using GitHub.Copilot.SDK
 @inject MenuShopper.Services.DataService DataService
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
 <PageTitle>Menu Details</PageTitle>
 
@@ -47,6 +49,29 @@
     </MudGrid>
 </MudPaper>
 
+<MudPaper Class="pa-4 mb-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <MudText Typo="Typo.subtitle1">Emoji list</MudText>
+        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AutoFixHigh"
+                       Disabled="_isGenerating" OnClick="GenerateEmojiListAsync">
+                Generate
+            </MudButton>
+            <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Variant="Variant.Filled"
+                           Disabled="string.IsNullOrWhiteSpace(_emojiListOutput)" OnClick="CopyEmojiListAsync" />
+        </MudStack>
+    </MudStack>
+    @if (_isGenerating)
+    {
+        <MudProgressLinear Indeterminate="true" Class="mt-2" />
+    }
+    <MudTextField Value="_emojiListOutput" ReadOnly="true" Lines="8" FullWidth="true" Variant="Variant.Outlined" Class="mt-2" />
+    @if (!string.IsNullOrWhiteSpace(_copilotError))
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-2">@_copilotError</MudAlert>
+    }
+</MudPaper>
+
 <MudDivider Class="my-4" />
 
 <MudTable Items="_meals" Hover="true" Dense="true">
@@ -69,6 +94,12 @@
     private List<MenuShopper.Models.Meal> _meals = [];
     private int _mealCount;
     private int _itemCount;
+    private string _emojiListOutput = string.Empty;
+    private string _copilotError = string.Empty;
+    private bool _isGenerating;
+
+    private const string EmojiPrompt =
+        "Here are our meal selections for the week, add appropriate emjois to each one and produce a list, note that the meals are not assigned to any particular day, and sort the list alphabetically";
 
     protected override async Task OnInitializedAsync()
     {
@@ -89,4 +120,59 @@
     }
 
     private void GoBack() => Nav.NavigateTo("/menus");
+
+    private async Task GenerateEmojiListAsync()
+    {
+        if (_isGenerating)
+            return;
+
+        if (_meals.Count == 0)
+        {
+            _copilotError = "No meals found for this menu.";
+            return;
+        }
+
+        _isGenerating = true;
+        _copilotError = string.Empty;
+        _emojiListOutput = string.Empty;
+
+        try
+        {
+            await using var client = new CopilotClient();
+            await using var session = await client.CreateSessionAsync(new SessionConfig { Model = "gpt-5.2" });
+
+            var response = await session.SendAndWaitAsync(
+                new MessageOptions { Prompt = BuildEmojiPrompt(), Mode = "high" },
+                TimeSpan.FromMinutes(3),
+                CancellationToken.None);
+            _emojiListOutput = response?.Data?.Content?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(_emojiListOutput))
+                _copilotError = "No response received.";
+        }
+        catch (Exception ex)
+        {
+            _copilotError = ex.Message;
+        }
+        finally
+        {
+            _isGenerating = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private string BuildEmojiPrompt()
+    {
+        var mealNames = _meals
+            .Select(m => m.Name)
+            .Where(name => !string.IsNullOrWhiteSpace(name));
+        return $"{EmojiPrompt}\n{string.Join(Environment.NewLine, mealNames)}";
+    }
+
+    private async Task CopyEmojiListAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_emojiListOutput))
+            return;
+
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", _emojiListOutput);
+    }
 }
