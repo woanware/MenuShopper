@@ -10,6 +10,14 @@
 <MudText Typo="Typo.h5" Class="mb-4">@_title</MudText>
 
 <MudPaper Class="pa-4">
+    <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2" Class="mb-4">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Filled" OnClick="Cancel" />
+        @if (!_isNew)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" />
+        }
+        <MudIconButton Icon="@Icons.Material.Filled.Check" Variant="Variant.Filled" Color="Color.Primary" OnClick="Save" />
+    </MudStack>
     <MudGrid Spacing="2">
         <MudItem xs="12" md="6">
             <MudTextField @bind-Value="_meal.Name" Label="Meal Name" Required="true" />
@@ -55,14 +63,6 @@
         </RowTemplate>
     </MudTable>
 
-    <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2" Class="mt-4">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Filled" OnClick="Cancel" />
-        @if (!_isNew)
-        {
-            <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" />
-        }
-        <MudIconButton Icon="@Icons.Material.Filled.Check" Variant="Variant.Filled" Color="Color.Primary" OnClick="Save" />
-    </MudStack>
 </MudPaper>
 
 @code {

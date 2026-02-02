@@ -4,12 +4,21 @@
 
 <PageTitle>Menu Planning</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-4">Menu Planning</MudText>
+<MudPaper Class="pa-4 mb-4" Style="position: sticky; top: 64px; z-index: 5; background-color: var(--mud-palette-surface);">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudText Typo="Typo.h5">Menu Planning</MudText>
+        <MudStack Row="true" Spacing="2">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Filled" OnClick="Cancel" />
+            <MudIconButton Icon="@Icons.Material.Filled.Check" Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateMenu" Disabled="@(!_selectedMeals.Any())" />
+        </MudStack>
+    </MudStack>
+    <MudStack>
+        <MudDatePicker @bind-Date="_startDate" Label="Start date" />
+    </MudStack>
+</MudPaper>
 
 <MudPaper Class="pa-4">
-    <MudDatePicker @bind-Date="_startDate" Label="Start date" />
-
-    <MudDivider Class="my-4" />
+    <MudDivider Class="mb-4" />
 
     <MudText Typo="Typo.subtitle2" Class="mb-2">Select meals</MudText>
     <MudTable Items="_meals" Hover="true" Dense="true" MultiSelection="true" @bind-SelectedItems="_selectedMeals">
@@ -24,11 +33,6 @@
             <MudTd DataLabel="Ingredients">@context.IngredientCount</MudTd>
         </RowTemplate>
     </MudTable>
-
-    <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2" Class="mt-4">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Filled" OnClick="Cancel" />
-        <MudIconButton Icon="@Icons.Material.Filled.Check" Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateMenu" Disabled="@(!_selectedMeals.Any())" />
-    </MudStack>
 </MudPaper>
 
 @code {
