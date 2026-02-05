@@ -17,11 +17,6 @@ public class DataService
     private List<string> _categories = [];
 
     private string BaseDataPath => Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "data");
-    private const string LegacyDataPath = @"C:\Dev\Personal\MenuAutomater\data";
-    private string LegacyMealsFilePath => Path.Combine(LegacyDataPath, MealsFileName);
-    private string LegacyMenusFolderPath => Path.Combine(LegacyDataPath, MenusFolderName);
-    private string LegacyCategoriesFilePath => Path.Combine(LegacyDataPath, CategoriesFileName);
-
     private string MealsFilePath => Path.Combine(BaseDataPath, MealsFileName);
     private string MenusFolderPath => Path.Combine(BaseDataPath, MenusFolderName);
     private string CategoriesFilePath => Path.Combine(BaseDataPath, CategoriesFileName);
@@ -32,12 +27,8 @@ public class DataService
         {
             if (!File.Exists(MealsFilePath))
             {
-                await TryImportLegacyMealsAsync();
-                if (!File.Exists(MealsFilePath))
-                {
-                    _meals = [];
-                    return _meals;
-                }
+                _meals = [];
+                return _meals;
             }
 
             var json = await File.ReadAllTextAsync(MealsFilePath);
@@ -49,27 +40,6 @@ public class DataService
         }
 
         return _meals;
-    }
-
-    public async Task<bool> TryImportLegacyMealsAsync()
-    {
-        try
-        {
-            if (File.Exists(MealsFilePath))
-                return false;
-
-            if (!File.Exists(LegacyMealsFilePath))
-                return false;
-
-            Directory.CreateDirectory(BaseDataPath);
-            var json = await File.ReadAllTextAsync(LegacyMealsFilePath);
-            await File.WriteAllTextAsync(MealsFilePath, json);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
     }
 
     public List<Meal> GetMeals() => _meals;
@@ -118,12 +88,8 @@ public class DataService
         {
             if (!File.Exists(CategoriesFilePath))
             {
-                await TryImportLegacyCategoriesAsync();
-                if (!File.Exists(CategoriesFilePath))
-                {
-                    _categories = [];
-                    return _categories;
-                }
+                _categories = [];
+                return _categories;
             }
 
             var json = await File.ReadAllTextAsync(CategoriesFilePath);
@@ -137,27 +103,6 @@ public class DataService
         return _categories;
     }
 
-    public async Task<bool> TryImportLegacyCategoriesAsync()
-    {
-        try
-        {
-            if (File.Exists(CategoriesFilePath))
-                return false;
-
-            if (!File.Exists(LegacyCategoriesFilePath))
-                return false;
-
-            Directory.CreateDirectory(BaseDataPath);
-            var json = await File.ReadAllTextAsync(LegacyCategoriesFilePath);
-            await File.WriteAllTextAsync(CategoriesFilePath, json);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
     private void EnsureMenusFolder()
     {
         Directory.CreateDirectory(MenusFolderPath);
@@ -167,9 +112,6 @@ public class DataService
     {
         _menus = [];
         EnsureMenusFolder();
-
-        if (Directory.GetFiles(MenusFolderPath, "menu_*.json").Length == 0)
-            await TryImportLegacyMenusAsync();
 
         foreach (var file in Directory.GetFiles(MenusFolderPath, "menu_*.json"))
         {
@@ -188,38 +130,6 @@ public class DataService
 
         _menus = _menus.OrderByDescending(m => m.Date).ToList();
         return _menus;
-    }
-
-    public async Task<bool> TryImportLegacyMenusAsync()
-    {
-        try
-        {
-            EnsureMenusFolder();
-            if (!Directory.Exists(LegacyMenusFolderPath))
-                return false;
-
-            var legacyFiles = Directory.GetFiles(LegacyMenusFolderPath, "menu_*.json");
-            if (legacyFiles.Length == 0)
-                return false;
-
-            var imported = false;
-            foreach (var file in legacyFiles)
-            {
-                var fileName = Path.GetFileName(file);
-                var destPath = Path.Combine(MenusFolderPath, fileName);
-                if (File.Exists(destPath))
-                    continue;
-
-                File.Copy(file, destPath);
-                imported = true;
-            }
-
-            return imported;
-        }
-        catch
-        {
-            return false;
-        }
     }
 
     public List<Menu> GetMenus() => _menus;
