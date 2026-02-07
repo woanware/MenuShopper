@@ -20,9 +20,12 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 10.0.x
+        
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore MenuShopper/MenuShopper.slnx
+
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build MenuShopper/MenuShopper.slnx --no-restore
+
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test MenuShopper/MenuShopper.slnx --no-build --verbosity normal
