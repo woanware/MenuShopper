@@ -2,11 +2,26 @@
 @inject MenuShopper.Services.DataService DataService
 @inject NavigationManager Nav
 @inject IDialogService DialogService
+@inject IJSRuntime JS
 
 <PageTitle>Shopping List</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-2">Shopping List</MudText>
-<MudText Typo="Typo.body2" Class="mb-4">@_subtitle</MudText>
+<MudStack Class="mb-2" Spacing="0">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+            <MudText Typo="Typo.h5">Shopping List</MudText>
+            <MudChip T="string" Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Small">@RemainingItemCount to get</MudChip>
+        </MudStack>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
+                       Disabled="@(!_items.Any())" OnClick="ExportItemsAsync">
+                Export
+            </MudButton>
+            <MudCheckBox T="bool" @bind-Value="_skipDeleteConfirmation" Label="Delete without confirmation" />
+        </MudStack>
+    </MudStack>
+    <MudText Typo="Typo.body2" Class="mb-4">@_subtitle</MudText>
+</MudStack>
 
     <MudPaper Class="pa-4 mb-4">
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
@@ -47,6 +62,8 @@
     private List<MenuShopper.Models.ShoppingListItem> _items = [];
     private string _newItem = string.Empty;
     private string _subtitle = string.Empty;
+    private int RemainingItemCount => _items.Count(item => !item.IsBought);
+    private bool _skipDeleteConfirmation;
 
     protected override async Task OnInitializedAsync()
     {
@@ -120,7 +137,7 @@
         if (_menu == null)
             return;
 
-        if (!await ConfirmDeleteAsync("Delete item", $"Delete '{item.Ingredient}'?"))
+        if (!_skipDeleteConfirmation && !await ConfirmDeleteAsync("Delete item", $"Delete '{item.Ingredient}'?"))
             return;
 
         _menu.ShoppingItems.RemoveAll(i => i.Id == item.Id);
@@ -140,5 +157,19 @@
 
         var result = await DialogService.ShowMessageBox(options, new DialogOptions { CloseOnEscapeKey = true });
         return result == true;
+    }
+
+    private async Task ExportItemsAsync()
+    {
+        if (_menu == null || _items.Count == 0)
+            return;
+
+        var fileDate = _menu.Date.ToString("yyyy-MM-dd");
+        var fileName = $"shopping-list-{fileDate}.txt";
+        var lines = _items
+            .Select(item => item.Ingredient)
+            .Where(text => !string.IsNullOrWhiteSpace(text));
+        var content = string.Join(Environment.NewLine, lines);
+        await JS.InvokeVoidAsync("menuShopper.downloadTextFile", fileName, content);
     }
 }

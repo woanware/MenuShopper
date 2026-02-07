@@ -1,5 +1,4 @@
 @page "/menus/{MenuId:guid}"
-@using GitHub.Copilot.SDK
 @inject MenuShopper.Services.DataService DataService
 @inject NavigationManager Nav
 @inject IJSRuntime JS
@@ -105,6 +104,7 @@
     {
         await DataService.LoadMealsAsync();
         await DataService.LoadMenusAsync();
+
         var menu = DataService.FindMenuById(MenuId);
         if (menu == null)
             return;
@@ -138,14 +138,12 @@
 
         try
         {
-            await using var client = new CopilotClient();
-            await using var session = await client.CreateSessionAsync(new SessionConfig { Model = "gpt-5.2" });
-
-            var response = await session.SendAndWaitAsync(
-                new MessageOptions { Prompt = BuildEmojiPrompt(), Mode = "high" },
+            _emojiListOutput = await DataService.SendCopilotPromptAsync(
+                BuildEmojiPrompt(),
+                "gpt-5.2",
+                "high",
                 TimeSpan.FromMinutes(3),
                 CancellationToken.None);
-            _emojiListOutput = response?.Data?.Content?.Trim() ?? string.Empty;
             if (string.IsNullOrWhiteSpace(_emojiListOutput))
                 _copilotError = "No response received.";
         }
@@ -165,6 +163,7 @@
         var mealNames = _meals
             .Select(m => m.Name)
             .Where(name => !string.IsNullOrWhiteSpace(name));
+
         return $"{EmojiPrompt}\n{string.Join(Environment.NewLine, mealNames)}";
     }
 

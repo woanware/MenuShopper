@@ -1,9 +1,10 @@
 using System.Text.Json;
+using GitHub.Copilot.SDK;
 using MenuShopper.Models;
 
 namespace MenuShopper.Services;
 
-public class DataService
+public class DataService : IAsyncDisposable
 {
     private const string MealsFileName = "meals.json";
     private const string CategoriesFileName = "categories.json";
@@ -11,6 +12,7 @@ public class DataService
 
     private readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
     private readonly SemaphoreSlim _menuSaveLock = new(1, 1);
+    private readonly CopilotClient _copilotClient = new();
 
     private List<Meal> _meals = [];
     private List<Menu> _menus = [];
@@ -199,7 +201,7 @@ public class DataService
                         Ingredient = ingredient,
                         MealNames = [meal.Name],
                         IsBought = false,
-                        IsCustomItem = false
+                        IsCustomItem = false,
                     };
                 }
             }
@@ -208,7 +210,9 @@ public class DataService
         foreach (var existingItem in menu.ShoppingItems)
         {
             if (existingItem.IsCustomItem)
+            {
                 items[existingItem.Ingredient] = existingItem;
+            }
             else if (items.TryGetValue(existingItem.Ingredient, out var item))
             {
                 item.IsBought = existingItem.IsBought;
@@ -216,12 +220,37 @@ public class DataService
             }
         }
 
-        return items.Values
-            .OrderBy(i => i.IsBought)
+        return items
+            .Values.OrderBy(i => i.IsBought)
             .ThenBy(i => i.MealNames.FirstOrDefault() ?? "zzz")
             .ThenBy(i => i.Ingredient)
             .ToList();
     }
 
+    public async Task<string> SendCopilotPromptAsync(
+        string prompt,
+        string model,
+        string mode,
+        TimeSpan timeout,
+        CancellationToken cancellationToken
+    )
+    {
+        await using var session = await _copilotClient.CreateSessionAsync(
+            new SessionConfig { Model = model }
+        );
+        var response = await session.SendAndWaitAsync(
+            new MessageOptions { Prompt = prompt, Mode = mode },
+            timeout,
+            cancellationToken
+        );
+        return response?.Data?.Content?.Trim() ?? string.Empty;
+    }
+
     public string GetDataFolderPath() => BaseDataPath;
+
+    public async ValueTask DisposeAsync()
+    {
+        _menuSaveLock.Dispose();
+        await _copilotClient.DisposeAsync();
+    }
 }

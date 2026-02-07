@@ -27,6 +27,8 @@ app.UseHttpsRedirection();
 
 app.UseAntiforgery();
 
+_ = app.Services.GetRequiredService<DataService>();
+
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
