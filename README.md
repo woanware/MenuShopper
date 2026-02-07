@@ -1,3 +1,5 @@
+[![.NET](https://github.com/woanware/MenuShopper/actions/workflows/dotnet.yml/badge.svg)](https://github.com/woanware/MenuShopper/actions/workflows/dotnet.yml)
+
 # MenuShopper
 
 MenuShopper is a local-first meal planner that turns your meal ideas into clean, actionable shopping lists. Build a menu in minutes, track what you need to buy, and keep your favorites close.
