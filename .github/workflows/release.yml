@@ -1,0 +1,37 @@
+
+
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g. 1.2.3)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+   build:
+     runs-on: windows-latest
+     steps:
+       - uses: actions/checkout@v4
+       - uses: actions/setup-dotnet@v4
+         with:
+           dotnet-version: "9.0.x"
+       - run: dotnet restore .\MenuShopper\MenuShopper.csproj
+       - run: dotnet publish .\MenuShopper\MenuShopper.csproj -c Release -r win-x64 --self-contained false /p:Version=${{ inputs.version }} /p:AssemblyVersion=${{ inputs.version }} /p:FileVersion=${{ inputs.version }} /p:InformationalVersion=${{ inputs.version }}
+       - name: Zip
+         shell: pwsh
+         run: |
+           $version = '${{ inputs.version }}'
+           $zip = "MenuShopper-$version-win-x64.zip"
+           Compress-Archive -Path .\MenuShopper\bin\Release\net9.0\win-x64\publish\* -DestinationPath $zip
+       - uses: softprops/action-gh-release@v2
+         with:
+           tag_name: v${{ inputs.version }}
+           name: v${{ inputs.version }}
+           files: MenuShopper-${{ inputs.version }}-win-x64.zip
+         env:
+           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
