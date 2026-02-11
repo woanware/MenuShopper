@@ -4,6 +4,12 @@ using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var staticWebAssetsManifest = Path.Combine(
+    builder.Environment.ContentRootPath,
+    $"{builder.Environment.ApplicationName}.staticwebassets.runtime.json");
+if (File.Exists(staticWebAssetsManifest))
+    builder.WebHost.UseStaticWebAssets();
+
 // Add MudBlazor services
 builder.Services.AddMudServices();
 

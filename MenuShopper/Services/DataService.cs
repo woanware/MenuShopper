@@ -18,7 +18,7 @@ public class DataService : IAsyncDisposable
     private List<Menu> _menus = [];
     private List<string> _categories = [];
 
-    private string BaseDataPath => Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "data");
+    private string BaseDataPath => Path.Combine(AppContext.BaseDirectory, "Data");
     private string MealsFilePath => Path.Combine(BaseDataPath, MealsFileName);
     private string MenusFolderPath => Path.Combine(BaseDataPath, MenusFolderName);
     private string CategoriesFilePath => Path.Combine(BaseDataPath, CategoriesFileName);

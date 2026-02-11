@@ -4,11 +4,19 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>MenuShopper.ico</ApplicationIcon>
+    <AssemblyVersion>1.0.0</AssemblyVersion>
   </PropertyGroup>
 
 
   <ItemGroup>
     <PackageReference Include="GitHub.Copilot.SDK" Version="0.1.20" />
     <PackageReference Include="MudBlazor" Version="8.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="wwwroot\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 </Project>
