@@ -22,6 +22,7 @@
         <MudTd DataLabel="Meals">@context.MealCountText</MudTd>
         <MudTd DataLabel="Items">@context.ItemCountText</MudTd>
         <MudTd>
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" Href="@($"/menus/edit/{context.Id}")" />
             <MudIconButton Icon="@Icons.Material.Filled.Info" Href="@($"/menus/{context.Id}")" />
             <MudIconButton Icon="@Icons.Material.Filled.ShoppingCart" Href="@($"/shopping-lists/{context.Id}")" />            
             <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => DeleteMenuAsync(context)" />
@@ -49,8 +50,27 @@
         if (!await ConfirmDeleteAsync("Delete menu", $"Delete menu starting {menu.DisplayDate}?"))
             return;
 
-        await DataService.DeleteMenuAsync(menu);
-        await LoadAsync();
+        try
+        {
+            await DataService.DeleteMenuAsync(menu);
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorAsync("Delete failed", ex.Message);
+        }
+    }
+
+    private async Task ShowErrorAsync(string title, string message)
+    {
+        var options = new MessageBoxOptions
+        {
+            Title = title,
+            Message = message,
+            YesText = "OK"
+        };
+
+        await DialogService.ShowMessageBox(options, new DialogOptions { CloseOnEscapeKey = true });
     }
 
     private async Task<bool> ConfirmDeleteAsync(string title, string message)

@@ -162,17 +162,12 @@ public class DataService : IAsyncDisposable
 
     public async Task DeleteMenuAsync(Menu menu)
     {
-        try
-        {
-            var path = Path.Combine(MenusFolderPath, menu.FileName);
-            if (File.Exists(path))
-                File.Delete(path);
-        }
-        catch
-        {
-            // ignore delete errors
-        }
+        EnsureMenusFolder();
+        var path = Path.Combine(MenusFolderPath, menu.FileName);
+        if (!File.Exists(path))
+            throw new FileNotFoundException($"Menu file not found at {path}.", path);
 
+        File.Delete(path);
         _menus.Remove(menu);
         await Task.CompletedTask;
     }

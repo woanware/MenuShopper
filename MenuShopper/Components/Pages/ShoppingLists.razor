@@ -47,8 +47,27 @@
         if (!await ConfirmDeleteAsync("Delete menu", $"Delete menu starting {menu.DisplayDate}?"))
             return;
 
-        await DataService.DeleteMenuAsync(menu);
-        await LoadAsync();
+        try
+        {
+            await DataService.DeleteMenuAsync(menu);
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorAsync("Delete failed", ex.Message);
+        }
+    }
+
+    private async Task ShowErrorAsync(string title, string message)
+    {
+        var options = new MessageBoxOptions
+        {
+            Title = title,
+            Message = message,
+            YesText = "OK"
+        };
+
+        await DialogService.ShowMessageBox(options, new DialogOptions { CloseOnEscapeKey = true });
     }
 
     private async Task<bool> ConfirmDeleteAsync(string title, string message)

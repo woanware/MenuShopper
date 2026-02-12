@@ -6,16 +6,20 @@ var builder = WebApplication.CreateBuilder(args);
 
 var staticWebAssetsManifest = Path.Combine(
     builder.Environment.ContentRootPath,
-    $"{builder.Environment.ApplicationName}.staticwebassets.runtime.json");
+    $"{builder.Environment.ApplicationName}.staticwebassets.runtime.json"
+);
 if (File.Exists(staticWebAssetsManifest))
     builder.WebHost.UseStaticWebAssets();
+
+var urls = builder.Configuration["Urls"];
+if (!string.IsNullOrWhiteSpace(urls))
+    builder.WebHost.UseUrls(urls);
 
 // Add MudBlazor services
 builder.Services.AddMudServices();
 
 // Add services to the container.
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddSingleton<DataService>();
 
 var app = builder.Build();
@@ -30,13 +34,11 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-
 app.UseAntiforgery();
 
 _ = app.Services.GetRequiredService<DataService>();
 
 app.MapStaticAssets();
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 
 app.Run();

@@ -7,7 +7,10 @@
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3">
     <MudText Typo="Typo.h5">Menu Details</MudText>
-    <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Filled" OnClick="GoBack" />
+    <MudStack Row="true" Spacing="2">
+        <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Filled" Href="@($"/menus/edit/{MenuId}")" />
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Filled" OnClick="GoBack" />
+    </MudStack>
 </MudStack>
 
 <MudPaper Class="pa-4 mb-4">
@@ -64,7 +67,12 @@
     {
         <MudProgressLinear Indeterminate="true" Class="mt-2" />
     }
-    <MudTextField Value="_emojiListOutput" ReadOnly="true" Lines="8" FullWidth="true" Variant="Variant.Outlined" Class="mt-2" />
+    @if (!string.IsNullOrWhiteSpace(_emojiListOutput))
+    {
+        <MudPaper Class="pa-3 mt-2" Style="border: 1px solid var(--mud-palette-lines-default); border-radius: var(--mud-default-borderradius);">
+            <MudText Typo="Typo.body1" Style="white-space: pre-line; font-family: 'Roboto Mono', monospace;">@_emojiListOutput</MudText>
+        </MudPaper>
+    }
     @if (!string.IsNullOrWhiteSpace(_copilotError))
     {
         <MudAlert Severity="Severity.Error" Class="mt-2">@_copilotError</MudAlert>
@@ -98,7 +106,7 @@
     private bool _isGenerating;
 
     private const string EmojiPrompt =
-        "Here are our meal selections for the week, add appropriate emjois to each one and produce a list, note that the meals are not assigned to any particular day, and sort the list alphabetically";
+        "Return only the menu items with one appropriate emoji before each name. Output format: '🍝 Spaghetti'. Do not add titles, numbering, bullets, or any other text. Sort alphabetically.";
 
     protected override async Task OnInitializedAsync()
     {

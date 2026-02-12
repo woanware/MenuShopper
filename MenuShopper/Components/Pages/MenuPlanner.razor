@@ -1,15 +1,16 @@
 @page "/menus/new"
+@page "/menus/edit/{MenuId:guid}"
 @inject MenuShopper.Services.DataService DataService
 @inject NavigationManager Nav
 
-<PageTitle>Menu Planning</PageTitle>
+<PageTitle>@PageTitleText</PageTitle>
 
 <MudPaper Class="pa-4 mb-4" Style="position: sticky; top: 64px; z-index: 5; background-color: var(--mud-palette-surface);">
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
-        <MudText Typo="Typo.h5">Menu Planning</MudText>
+        <MudText Typo="Typo.h5">@PageTitleText</MudText>
         <MudStack Row="true" Spacing="2">
             <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Filled" OnClick="Cancel" />
-            <MudIconButton Icon="@Icons.Material.Filled.Check" Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateMenu" Disabled="@(!_selectedMeals.Any())" />
+            <MudIconButton Icon="@(_isEdit ? Icons.Material.Filled.Save : Icons.Material.Filled.Check)" Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveMenuAsync" Disabled="@(!_selectedMeals.Any())" />
         </MudStack>
     </MudStack>
     <MudStack>
@@ -39,32 +40,64 @@
 </MudPaper>
 
 @code {
+    [Parameter] public Guid? MenuId { get; set; }
+
+    private MenuShopper.Models.Menu? _menu;
     private List<MenuShopper.Models.Meal> _meals = [];
     private HashSet<MenuShopper.Models.Meal> _selectedMeals = [];
     private DateTime? _startDate = DateTime.Today;
+    private bool _isEdit => MenuId.HasValue;
+    private string PageTitleText => _isEdit ? "Edit Menu" : "Menu Planning";
 
     protected override async Task OnInitializedAsync()
     {
         await DataService.LoadMealsAsync();
         _meals = DataService.GetMeals().OrderBy(m => m.Name).ToList();
+        if (!_isEdit)
+            return;
+
+        await DataService.LoadMenusAsync();
+        _menu = DataService.FindMenuById(MenuId!.Value);
+        if (_menu == null)
+        {
+            Nav.NavigateTo("/menus");
+            return;
+        }
+
+        _startDate = _menu.Date;
+        var selectedIds = _menu.MealIds.ToHashSet();
+        _selectedMeals = _meals.Where(meal => selectedIds.Contains(meal.Id)).ToHashSet();
     }
 
-    private async Task CreateMenu()
+    private async Task SaveMenuAsync()
     {
         if (_selectedMeals.Count == 0)
             return;
 
-        var menu = new MenuShopper.Models.Menu
+        if (_menu == null)
         {
-            Date = _startDate ?? DateTime.Today,
-            Meals = _selectedMeals.Select(m => new MenuShopper.Models.MenuMealSelection { MealId = m.Id, IsRescheduled = false }).ToList(),
-            IsLocked = true
-        };
+            var menu = new MenuShopper.Models.Menu
+            {
+                Date = _startDate ?? DateTime.Today,
+                Meals = _selectedMeals.Select(m => new MenuShopper.Models.MenuMealSelection { MealId = m.Id, IsRescheduled = false }).ToList(),
+                IsLocked = true
+            };
 
-        menu.ShoppingItems = DataService.GenerateShoppingList(menu);
-        await DataService.SaveMenuAsync(menu);
-        Nav.NavigateTo($"/shopping-lists/{menu.Id}");
+            menu.ShoppingItems = DataService.GenerateShoppingList(menu);
+            await DataService.SaveMenuAsync(menu);
+            Nav.NavigateTo($"/shopping-lists/{menu.Id}");
+            return;
+        }
+
+        _menu.Date = _startDate ?? DateTime.Today;
+        _menu.Meals = _selectedMeals.Select(m => new MenuShopper.Models.MenuMealSelection { MealId = m.Id, IsRescheduled = false }).ToList();
+        _menu.ShoppingItems = DataService.GenerateShoppingList(_menu);
+        await DataService.SaveMenuAsync(_menu);
+        Nav.NavigateTo($"/shopping-lists/{_menu.Id}");
     }
 
-    private void Cancel() => Nav.NavigateTo("/menus");
+    private void Cancel()
+    {
+        Nav.NavigateTo("/menus");
+    }
 }
