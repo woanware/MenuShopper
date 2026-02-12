@@ -7,7 +7,10 @@
 
 <MudPaper Class="pa-4 mb-4" Style="position: sticky; top: 64px; z-index: 5; background-color: var(--mud-palette-surface);">
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
-        <MudText Typo="Typo.h5">@PageTitleText</MudText>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudText Typo="Typo.h5">@PageTitleText</MudText>
+            <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small">@_selectedMeals.Count selected</MudChip>
+        </MudStack>
         <MudStack Row="true" Spacing="2">
             <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Filled" OnClick="Cancel" />
             <MudIconButton Icon="@(_isEdit ? Icons.Material.Filled.Save : Icons.Material.Filled.Check)" Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveMenuAsync" Disabled="@(!_selectedMeals.Any())" />
@@ -23,7 +26,6 @@
 
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
         <MudText Typo="Typo.subtitle2">Select meals</MudText>
-        <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small">@_selectedMeals.Count selected</MudChip>
     </MudStack>
     <MudTable Items="_meals" Hover="true" Dense="true" MultiSelection="true" @bind-SelectedItems="_selectedMeals">
         <HeaderContent>

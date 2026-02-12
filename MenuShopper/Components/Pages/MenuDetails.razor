@@ -106,7 +106,7 @@
     private bool _isGenerating;
 
     private const string EmojiPrompt =
-        "Return only the menu items with one appropriate emoji before each name. Output format: '🍝 Spaghetti'. Do not add titles, numbering, bullets, or any other text. Sort alphabetically.";
+        "Add one appropriate emoji before each menu item name in the list below. Use the exact item text unchanged and include every item exactly once. Output one item per line in the same order as provided. Format: '🍝 Spaghetti'. Do not add any other text.";
 
     protected override async Task OnInitializedAsync()
     {
@@ -153,7 +153,17 @@
                 TimeSpan.FromMinutes(3),
                 CancellationToken.None);
             if (string.IsNullOrWhiteSpace(_emojiListOutput))
+            {
                 _copilotError = "No response received.";
+                return;
+            }
+
+            if (!TryValidateEmojiListOutput(_emojiListOutput, out var validationError))
+            {
+                _copilotError = validationError;
+                _emojiListOutput = string.Empty;
+                return;
+            }
         }
         catch (Exception ex)
         {
@@ -166,13 +176,62 @@
         }
     }
 
+    private List<string> GetMealNames()
+    {
+        return _meals
+            .Select(m => m.Name.Trim())
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
     private string BuildEmojiPrompt()
     {
-        var mealNames = _meals
-            .Select(m => m.Name)
-            .Where(name => !string.IsNullOrWhiteSpace(name));
+        var mealNames = GetMealNames();
 
         return $"{EmojiPrompt}\n{string.Join(Environment.NewLine, mealNames)}";
+    }
+
+    private bool TryValidateEmojiListOutput(string output, out string errorMessage)
+    {
+        var expectedNames = GetMealNames();
+        if (expectedNames.Count == 0)
+        {
+            errorMessage = "No meals found for this menu.";
+            return false;
+        }
+
+        var expectedSet = new HashSet<string>(expectedNames, StringComparer.OrdinalIgnoreCase);
+        var matched = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var outputLines = output
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        foreach (var line in outputLines)
+        {
+            var separatorIndex = line.IndexOf(' ');
+            if (separatorIndex <= 0)
+                continue;
+
+            var name = line[(separatorIndex + 1)..].Trim();
+            if (expectedSet.Contains(name))
+                matched.Add(name);
+        }
+
+        var missing = expectedNames.Where(name => !matched.Contains(name)).ToList();
+        if (missing.Count == 0 && outputLines.Length == expectedNames.Count)
+        {
+            errorMessage = string.Empty;
+            return true;
+        }
+
+        if (missing.Count > 0)
+        {
+            errorMessage = $"Emoji list is missing {missing.Count} meal(s): {string.Join(", ", missing)}. Please generate again.";
+            return false;
+        }
+
+        errorMessage = "Emoji list contains unexpected items. Please generate again.";
+        return false;
     }
 
     private async Task CopyEmojiListAsync()
