@@ -149,9 +149,10 @@
         if (_isGeneratingMealSuggestions)
             return;
 
-        if (_meals.Count == 0)
+        var suggestionCandidates = GetSuggestionCandidateMeals();
+        if (suggestionCandidates.Count < 10)
         {
-            _mealSuggestionsError = "No meals found in the library.";
+            _mealSuggestionsError = $"Need at least 10 unselected meals to suggest from. Available: {suggestionCandidates.Count}.";
             return;
         }
 
@@ -162,7 +163,7 @@
         try
         {
             var response = await DataService.SendCopilotPromptAsync(
-                BuildMealSuggestionsPrompt(),
+                BuildMealSuggestionsPrompt(suggestionCandidates),
                 "gpt-5.2",
                 "high",
                 TimeSpan.FromMinutes(3),
@@ -175,7 +176,7 @@
                 return;
             }
 
-            if (!TryNormalizeMealSuggestions(response, out var normalizedOutput, out var validationError))
+            if (!TryNormalizeMealSuggestions(response, suggestionCandidates, out var normalizedOutput, out var validationError))
             {
                 _mealSuggestionsError = validationError;
                 return;
@@ -194,7 +195,16 @@
         }
     }
 
-    private string BuildMealSuggestionsPrompt()
+    private List<MenuShopper.Models.Meal> GetSuggestionCandidateMeals()
+    {
+        var selectedIds = _selectedMeals.Select(meal => meal.Id).ToHashSet();
+        return _meals
+            .Where(meal => !selectedIds.Contains(meal.Id))
+            .Where(meal => !string.IsNullOrWhiteSpace(meal.Name))
+            .ToList();
+    }
+
+    private string BuildMealSuggestionsPrompt(List<MenuShopper.Models.Meal> suggestionCandidates)
     {
         var mealsById = _meals.ToDictionary(meal => meal.Id, meal => meal.Name);
         var recentMenus = DataService.GetMenus()
@@ -224,18 +234,30 @@
             ? "No menus in the last 21 days."
             : string.Join(Environment.NewLine, recentHistoryLines);
 
-        var mealLibrary = _meals
+        var selectedMealNames = _selectedMeals
+            .Select(meal => meal.Name)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .OrderBy(name => name)
+            .ToList();
+        var selectedMealsText = selectedMealNames.Count == 0
+            ? "None."
+            : string.Join(", ", selectedMealNames);
+
+        var mealLibrary = suggestionCandidates
             .OrderBy(meal => meal.Name)
             .Select(meal => $"{meal.Name} | Category: {meal.Category} | Dairy: {(meal.IsDairy ? "Yes" : "No")} | Favourite: {(meal.IsFavourite ? "Yes" : "No")}");
 
-        return $"{MealSuggestionsPrompt}\n\nRecent menu history (last 21 days):\n{recentHistory}\n\nMeal library:\n{string.Join(Environment.NewLine, mealLibrary)}";
+        return $"{MealSuggestionsPrompt}\n\nAlready selected meals (do not suggest): {selectedMealsText}\n\nRecent menu history (last 21 days):\n{recentHistory}\n\nMeal library:\n{string.Join(Environment.NewLine, mealLibrary)}";
     }
 
-    private bool TryNormalizeMealSuggestions(string output, out string normalizedOutput, out string errorMessage)
+    private bool TryNormalizeMealSuggestions(string output, List<MenuShopper.Models.Meal> suggestionCandidates, out string normalizedOutput, out string errorMessage)
     {
-        var availableMeals = _meals
-            .Where(meal => !string.IsNullOrWhiteSpace(meal.Name))
+        var availableMeals = suggestionCandidates
             .ToDictionary(meal => meal.Name, meal => meal, StringComparer.OrdinalIgnoreCase);
+        var selectedMealNames = _selectedMeals
+            .Select(meal => meal.Name)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var suggestionLines = output
             .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -253,6 +275,13 @@
         var suggestedMeals = new List<MenuShopper.Models.Meal>();
         foreach (var line in suggestionLines)
         {
+            if (selectedMealNames.Contains(line))
+            {
+                normalizedOutput = string.Empty;
+                errorMessage = $"Suggestion includes already selected meal: '{line}'. Please generate again.";
+                return false;
+            }
+
             if (!availableMeals.TryGetValue(line, out var meal))
             {
                 normalizedOutput = string.Empty;

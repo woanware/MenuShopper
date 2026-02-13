@@ -170,11 +170,29 @@
             return;
 
         var fileDate = _menu.Date.ToString("yyyy-MM-dd");
-        var fileName = $"shopping-list-{fileDate}.txt";
+        var fileName = $"shopping-list-{fileDate}.md";
         var lines = _items
-            .Select(item => item.Ingredient)
-            .Where(text => !string.IsNullOrWhiteSpace(text));
-        var content = string.Join(Environment.NewLine, lines);
+            .Where(item => !string.IsNullOrWhiteSpace(item.Ingredient))
+            .Select(item =>
+            {
+                var check = item.IsBought ? "x" : " ";
+                var ingredient = EscapeMarkdownText(item.Ingredient);
+                if (item.MealNames.Count == 0)
+                    return $"- [{check}] {ingredient}";
+
+                var fromMeals = string.Join(", ", item.MealNames.Select(EscapeMarkdownText));
+                return $"- [{check}] {ingredient} _(from: {fromMeals})_";
+            });
+        var content = $"# Shopping List ({_menu.DisplayDate}){Environment.NewLine}{Environment.NewLine}{string.Join(Environment.NewLine, lines)}";
         await JS.InvokeVoidAsync("menuShopper.downloadTextFile", fileName, content);
     }
+
+    private static string EscapeMarkdownText(string value)
+        => value
+            .Replace("\\", "\\\\", StringComparison.Ordinal)
+            .Replace("*", "\\*", StringComparison.Ordinal)
+            .Replace("_", "\\_", StringComparison.Ordinal)
+            .Replace("[", "\\[", StringComparison.Ordinal)
+            .Replace("]", "\\]", StringComparison.Ordinal)
+            .Replace("`", "\\`", StringComparison.Ordinal);
 }
