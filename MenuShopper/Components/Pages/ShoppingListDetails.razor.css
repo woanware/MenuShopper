@@ -1,0 +1,12 @@
+.shopping-item-card {
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: var(--mud-default-borderradius);
+}
+
+.shopping-item-bought {
+    opacity: 0.65;
+}
+
+.shopping-item-bought .shopping-item-name {
+    text-decoration: line-through;
+}

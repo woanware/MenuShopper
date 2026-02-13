@@ -27,18 +27,29 @@
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
         <MudText Typo="Typo.subtitle2">Select meals</MudText>
     </MudStack>
-    <MudTable Items="_meals" Hover="true" Dense="true" MultiSelection="true" @bind-SelectedItems="_selectedMeals">
-        <HeaderContent>
-            <MudTh>Name</MudTh>
-            <MudTh>Category</MudTh>
-            <MudTh>Ingredients</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Name">@context.Name</MudTd>
-            <MudTd DataLabel="Category">@context.Category</MudTd>
-            <MudTd DataLabel="Ingredients">@context.IngredientCount</MudTd>
-        </RowTemplate>
-    </MudTable>
+    <MudGrid Spacing="2">
+        @foreach (var meal in _meals)
+        {
+            <MudItem xs="12" sm="6" md="4" lg="3" xl="2">
+                <MudPaper Class="@GetMealCardClass(meal)" @onclick="() => ToggleMealSelection(meal)">
+                    <MudStack Spacing="0">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                            <MudText Typo="Typo.subtitle2">@meal.Name</MudText>
+                            <MudCheckBox T="bool" Value="@IsMealSelected(meal)"
+                                         ValueChanged="(value) => SetMealSelection(meal, value)"
+                                         Color="Color.Primary"
+                                         Dense="true"
+                                         @onclick:stopPropagation="true" />
+                        </MudStack>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                            <MudChip T="string" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Class="meal-card-chip">@meal.Category</MudChip>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@meal.IngredientCount</MudText>
+                        </MudStack>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
 </MudPaper>
 
 @code {
@@ -101,5 +112,28 @@
     private void Cancel()
     {
         Nav.NavigateTo("/menus");
+    }
+
+    private bool IsMealSelected(MenuShopper.Models.Meal meal) => _selectedMeals.Contains(meal);
+
+    private void ToggleMealSelection(MenuShopper.Models.Meal meal)
+    {
+        if (!_selectedMeals.Add(meal))
+            _selectedMeals.Remove(meal);
+    }
+
+    private void SetMealSelection(MenuShopper.Models.Meal meal, bool isSelected)
+    {
+        if (isSelected)
+            _selectedMeals.Add(meal);
+        else
+            _selectedMeals.Remove(meal);
+    }
+
+    private string GetMealCardClass(MenuShopper.Models.Meal meal)
+    {
+        return IsMealSelected(meal)
+            ? "meal-card meal-card-selected pa-2"
+            : "meal-card pa-2";
     }
 }

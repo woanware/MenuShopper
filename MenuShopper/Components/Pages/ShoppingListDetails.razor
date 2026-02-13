@@ -34,26 +34,34 @@
         </MudStack>
     </MudPaper>
 
-<MudTable Items="_items" Hover="true" Dense="true" RowStyle="padding-top:2px;padding-bottom:2px;" RowStyleFunc="GetRowStyle">
-    <HeaderContent>
-        <MudTh>Bought</MudTh>
-        <MudTh>Item</MudTh>
-        <MudTh>From</MudTh>
-        <MudTh></MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="Bought">
-            <MudCheckBox T="bool"
-                         Value="context.IsBought"
-                         ValueChanged="(value) => ToggleBoughtAsync(context, value)" />
-        </MudTd>
-        <MudTd DataLabel="Item">@context.Ingredient</MudTd>
-        <MudTd DataLabel="From">@context.MealNamesText</MudTd>
-        <MudTd>
-            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => DeleteItemAsync(context)" />
-        </MudTd>
-    </RowTemplate>
-</MudTable>
+<MudGrid Spacing="2">
+    @foreach (var item in _items)
+    {
+        <MudItem xs="12" sm="6" md="4" lg="3">
+            <MudPaper Class="@GetItemCardClass(item)">
+                <MudStack Spacing="1">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            <MudCheckBox T="bool"
+                                         Dense="true"
+                                         Value="item.IsBought"
+                                         ValueChanged="(value) => ToggleBoughtAsync(item, value)" />
+                            <MudText Typo="Typo.subtitle2" Class="shopping-item-name">@item.Ingredient</MudText>
+                        </MudStack>
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                       Size="Size.Small"
+                                       Color="Color.Error"
+                                       OnClick="() => DeleteItemAsync(item)" />
+                    </MudStack>
+                    @if (!string.IsNullOrWhiteSpace(item.MealNamesText))
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="shopping-item-source">From: @item.MealNamesText</MudText>
+                    }
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    }
+</MudGrid>
 
 @code {
     [Parameter] public Guid MenuId { get; set; }
@@ -93,8 +101,8 @@
         await DataService.SaveMenuAsync(_menu);
     }
 
-    private string GetRowStyle(MenuShopper.Models.ShoppingListItem item, int rowNumber)
-        => item.IsBought ? "text-decoration: line-through; opacity: 0.6;" : string.Empty;
+    private string GetItemCardClass(MenuShopper.Models.ShoppingListItem item)
+        => item.IsBought ? "shopping-item-card shopping-item-bought pa-3" : "shopping-item-card pa-3";
 
     private async Task AddItem()
     {

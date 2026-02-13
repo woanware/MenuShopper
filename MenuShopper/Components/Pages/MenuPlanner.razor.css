@@ -1,0 +1,24 @@
+.meal-card {
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: var(--mud-default-borderradius);
+    cursor: pointer;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.meal-card:hover {
+    border-color: var(--mud-palette-primary);
+}
+
+.meal-card-selected {
+    border-color: var(--mud-palette-primary);
+    box-shadow: 0 0 0 1px var(--mud-palette-primary);
+}
+
+.meal-card-chip {
+    align-self: flex-start;
+}
+
+.meal-card-chip .mud-chip-label {
+    font-size: 0.75rem;
+    padding-inline: 8px;
+}
