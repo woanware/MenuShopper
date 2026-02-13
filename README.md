@@ -87,22 +87,13 @@ dotnet run
 Then open the URL shown in the console.
 
 ## ⚙️ Configuration
-MenuShopper uses standard ASP.NET Core configuration files in the project root:
+MenuShopper uses standard ASP.NET Core configuration file in the project root:
 - `MenuShopper/appsettings.json`
-- `MenuShopper/appsettings.Development.json`
 
 ### Current key values
 From `appsettings.json`:
 - `Urls`: `"http://0.0.0.0:5000"`  
   Used by `Program.cs` to bind the web server URL (`builder.Configuration["Urls"]` + `UseUrls(...)`).
-- `AllowedHosts`: `"*"`  
-  Default ASP.NET Core host filtering setting.
-- `Logging:LogLevel:Default`: `"Information"`
-- `Logging:LogLevel:Microsoft.AspNetCore`: `"Warning"`
-
-From `appsettings.Development.json`:
-- `Logging:LogLevel:Default`: `"Information"`
-- `Logging:LogLevel:Microsoft.AspNetCore`: `"Warning"`
 
 ### Common change
 To run on a different port, update `Urls` in `appsettings.json`, for example:

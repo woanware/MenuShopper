@@ -55,10 +55,9 @@
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
         <MudText Typo="Typo.subtitle1">Emoji list</MudText>
         <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AutoFixHigh"
-                       Disabled="_isGenerating" OnClick="GenerateEmojiListAsync">
-                Generate
-            </MudButton>
+            <MudIconButton Icon="@Icons.Material.Filled.EmojiEmotions" Variant="Variant.Filled" Color="Color.Primary"
+                           aria-label="Generate emoji list"
+                           Disabled="_isGenerating" OnClick="GenerateEmojiListAsync" />
             <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Variant="Variant.Filled"
                            Disabled="string.IsNullOrWhiteSpace(_emojiListOutput)" OnClick="CopyEmojiListAsync" />
         </MudStack>

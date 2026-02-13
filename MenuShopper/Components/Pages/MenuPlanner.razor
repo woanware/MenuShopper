@@ -24,10 +24,9 @@
 <MudPaper Class="pa-4 mb-4">
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
         <MudText Typo="Typo.subtitle1">Copilot meal suggestions</MudText>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AutoFixHigh"
-                   Disabled="_isGeneratingMealSuggestions" OnClick="GenerateMealSuggestionsAsync">
-            Suggest 10 meals
-        </MudButton>
+        <MudIconButton Icon="@Icons.Material.Filled.RestaurantMenu" Variant="Variant.Filled" Color="Color.Primary"
+                       aria-label="Suggest 10 meals"
+                       Disabled="_isGeneratingMealSuggestions" OnClick="GenerateMealSuggestionsAsync" />
     </MudStack>
     @if (_isGeneratingMealSuggestions)
     {
