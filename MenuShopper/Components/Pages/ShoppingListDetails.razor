@@ -29,7 +29,7 @@
                           Placeholder="Add extra item"
                           Immediate="true"
                           TextUpdateSuppression="false"
-                          OnKeyDown="HandleAddKeyDown" />
+                          OnKeyUp="HandleAddKeyUp" />
             <MudIconButton Icon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" OnClick="AddItem" />
         </MudStack>
     </MudPaper>
@@ -129,14 +129,11 @@
         _items = _menu.ShoppingItems.ToList();
     }
 
-    private async Task HandleAddKeyDown(KeyboardEventArgs args)
+    private async Task HandleAddKeyUp(KeyboardEventArgs args)
     {
         if ((args.Key == "Enter" || args.Key == "NumpadEnter") && !args.Repeat)
         {
             await AddItem();
-            await Task.Delay(100);
-            _newItem = string.Empty;
-            StateHasChanged();
         }
     }
 
