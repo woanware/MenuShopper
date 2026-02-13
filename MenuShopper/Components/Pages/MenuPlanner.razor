@@ -21,6 +21,30 @@
     </MudStack>
 </MudPaper>
 
+<MudPaper Class="pa-4 mb-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <MudText Typo="Typo.subtitle1">Copilot meal suggestions</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.AutoFixHigh"
+                   Disabled="_isGeneratingMealSuggestions" OnClick="GenerateMealSuggestionsAsync">
+            Suggest 10 meals
+        </MudButton>
+    </MudStack>
+    @if (_isGeneratingMealSuggestions)
+    {
+        <MudProgressLinear Indeterminate="true" Class="mt-2" />
+    }
+    @if (!string.IsNullOrWhiteSpace(_mealSuggestionsOutput))
+    {
+        <MudPaper Class="pa-3 mt-2" Style="border: 1px solid var(--mud-palette-lines-default); border-radius: var(--mud-default-borderradius);">
+            <MudText Typo="Typo.body2" Style="white-space: pre-line; font-family: 'Roboto Mono', monospace;">@_mealSuggestionsOutput</MudText>
+        </MudPaper>
+    }
+    @if (!string.IsNullOrWhiteSpace(_mealSuggestionsError))
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-2">@_mealSuggestionsError</MudAlert>
+    }
+</MudPaper>
+
 <MudPaper Class="pa-4">
     <MudDivider Class="mb-4" />
 
@@ -59,17 +83,28 @@
     private List<MenuShopper.Models.Meal> _meals = [];
     private HashSet<MenuShopper.Models.Meal> _selectedMeals = [];
     private DateTime? _startDate = DateTime.Today;
+    private string _mealSuggestionsOutput = string.Empty;
+    private string _mealSuggestionsError = string.Empty;
+    private bool _isGeneratingMealSuggestions;
     private bool _isEdit => MenuId.HasValue;
     private string PageTitleText => _isEdit ? "Edit Menu" : "Menu Planning";
+    private const string MealSuggestionsPrompt =
+        "You are a meal planning expert. Suggest exactly 10 meals from the provided meal library." +
+        "\nUse the recent menu history from the previous 3 weeks to avoid repetition." +
+        "\n\"Easy\" and \"Oven\" are normally fixed in each 7-day period, so avoid suggesting them unless they are favourite and not very recent." +
+        "\nKeep category variety so suggestions are not all from one category." +
+        "\nPrefer non-dairy meals; at most 2 suggestions may include dairy." +
+        "\nReturn only meal names, one per line, using exact names from the library." +
+        "\nDo not add numbering, bullets, or any extra text.";
 
     protected override async Task OnInitializedAsync()
     {
         await DataService.LoadMealsAsync();
+        await DataService.LoadMenusAsync();
         _meals = DataService.GetMeals().OrderBy(m => m.Name).ToList();
         if (!_isEdit)
             return;
 
-        await DataService.LoadMenusAsync();
         _menu = DataService.FindMenuById(MenuId!.Value);
         if (_menu == null)
         {
@@ -107,6 +142,184 @@
         _menu.ShoppingItems = DataService.GenerateShoppingList(_menu);
         await DataService.SaveMenuAsync(_menu);
         Nav.NavigateTo($"/shopping-lists/{_menu.Id}");
+    }
+
+    private async Task GenerateMealSuggestionsAsync()
+    {
+        if (_isGeneratingMealSuggestions)
+            return;
+
+        if (_meals.Count == 0)
+        {
+            _mealSuggestionsError = "No meals found in the library.";
+            return;
+        }
+
+        _isGeneratingMealSuggestions = true;
+        _mealSuggestionsError = string.Empty;
+        _mealSuggestionsOutput = string.Empty;
+
+        try
+        {
+            var response = await DataService.SendCopilotPromptAsync(
+                BuildMealSuggestionsPrompt(),
+                "gpt-5.2",
+                "high",
+                TimeSpan.FromMinutes(3),
+                CancellationToken.None
+            );
+
+            if (string.IsNullOrWhiteSpace(response))
+            {
+                _mealSuggestionsError = "No response received.";
+                return;
+            }
+
+            if (!TryNormalizeMealSuggestions(response, out var normalizedOutput, out var validationError))
+            {
+                _mealSuggestionsError = validationError;
+                return;
+            }
+
+            _mealSuggestionsOutput = normalizedOutput;
+        }
+        catch (Exception ex)
+        {
+            _mealSuggestionsError = ex.Message;
+        }
+        finally
+        {
+            _isGeneratingMealSuggestions = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private string BuildMealSuggestionsPrompt()
+    {
+        var mealsById = _meals.ToDictionary(meal => meal.Id, meal => meal.Name);
+        var recentMenus = DataService.GetMenus()
+            .Where(menu => menu.Date >= DateTime.Today.AddDays(-21))
+            .OrderByDescending(menu => menu.Date)
+            .ToList();
+
+        var recentHistoryLines = recentMenus
+            .Select(menu =>
+            {
+                var mealNames = menu.MealIds
+                    .Select(id => mealsById.TryGetValue(id, out var mealName) ? mealName : null)
+                    .Where(mealName => !string.IsNullOrWhiteSpace(mealName))
+                    .Cast<string>()
+                    .ToList();
+
+                if (mealNames.Count == 0)
+                    return null;
+
+                return $"{menu.Date:yyyy-MM-dd}: {string.Join(", ", mealNames)}";
+            })
+            .Where(line => !string.IsNullOrWhiteSpace(line))
+            .Cast<string>()
+            .ToList();
+
+        var recentHistory = recentHistoryLines.Count == 0
+            ? "No menus in the last 21 days."
+            : string.Join(Environment.NewLine, recentHistoryLines);
+
+        var mealLibrary = _meals
+            .OrderBy(meal => meal.Name)
+            .Select(meal => $"{meal.Name} | Category: {meal.Category} | Dairy: {(meal.IsDairy ? "Yes" : "No")} | Favourite: {(meal.IsFavourite ? "Yes" : "No")}");
+
+        return $"{MealSuggestionsPrompt}\n\nRecent menu history (last 21 days):\n{recentHistory}\n\nMeal library:\n{string.Join(Environment.NewLine, mealLibrary)}";
+    }
+
+    private bool TryNormalizeMealSuggestions(string output, out string normalizedOutput, out string errorMessage)
+    {
+        var availableMeals = _meals
+            .Where(meal => !string.IsNullOrWhiteSpace(meal.Name))
+            .ToDictionary(meal => meal.Name, meal => meal, StringComparer.OrdinalIgnoreCase);
+
+        var suggestionLines = output
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(NormalizeSuggestionLine)
+            .Where(line => !string.IsNullOrWhiteSpace(line))
+            .ToList();
+
+        if (suggestionLines.Count != 10)
+        {
+            normalizedOutput = string.Empty;
+            errorMessage = "Copilot should return exactly 10 meal suggestions. Please generate again.";
+            return false;
+        }
+
+        var suggestedMeals = new List<MenuShopper.Models.Meal>();
+        foreach (var line in suggestionLines)
+        {
+            if (!availableMeals.TryGetValue(line, out var meal))
+            {
+                normalizedOutput = string.Empty;
+                errorMessage = $"Unknown meal in suggestions: '{line}'. Please generate again.";
+                return false;
+            }
+
+            if (suggestedMeals.Any(existing => string.Equals(existing.Name, meal.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                normalizedOutput = string.Empty;
+                errorMessage = "Copilot returned duplicate meal suggestions. Please generate again.";
+                return false;
+            }
+
+            suggestedMeals.Add(meal);
+        }
+
+        var disallowedFixedMeals = suggestedMeals
+            .Where(meal => (string.Equals(meal.Name, "Easy", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(meal.Name, "Oven", StringComparison.OrdinalIgnoreCase)) &&
+                           !meal.IsFavourite)
+            .Select(meal => meal.Name)
+            .ToList();
+        if (disallowedFixedMeals.Count > 0)
+        {
+            normalizedOutput = string.Empty;
+            errorMessage = $"Suggestions included fixed meals that are not favourites: {string.Join(", ", disallowedFixedMeals)}. Please generate again.";
+            return false;
+        }
+
+        if (suggestedMeals.Count(meal => meal.IsDairy) > 2)
+        {
+            normalizedOutput = string.Empty;
+            errorMessage = "Suggestions include more than 2 dairy meals. Please generate again.";
+            return false;
+        }
+
+        if (suggestedMeals.Select(meal => meal.Category).Distinct(StringComparer.OrdinalIgnoreCase).Count() < 2)
+        {
+            normalizedOutput = string.Empty;
+            errorMessage = "Suggestions need more category variety. Please generate again.";
+            return false;
+        }
+
+        normalizedOutput = string.Join(Environment.NewLine, suggestedMeals.Select(meal => meal.Name));
+        errorMessage = string.Empty;
+        return true;
+    }
+
+    private static string NormalizeSuggestionLine(string line)
+    {
+        var text = line.Trim();
+        if (text.Length == 0)
+            return text;
+
+        if ((text.StartsWith("-") || text.StartsWith("*") || text.StartsWith("•")) && text.Length > 1)
+            text = text[1..].Trim();
+
+        var dotIndex = text.IndexOf('.');
+        if (dotIndex > 0 && int.TryParse(text[..dotIndex], out _))
+            text = text[(dotIndex + 1)..].Trim();
+
+        var bracketIndex = text.IndexOf(')');
+        if (bracketIndex > 0 && int.TryParse(text[..bracketIndex], out _))
+            text = text[(bracketIndex + 1)..].Trim();
+
+        return text;
     }
 
     private void Cancel()
