@@ -6,7 +6,7 @@
 <PageTitle>@PageTitleText</PageTitle>
 
 <MudPaper Class="pa-4 mb-4" Style="position: sticky; top: 64px; z-index: 5; background-color: var(--mud-palette-surface);">
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
             <MudText Typo="Typo.h5">@PageTitleText</MudText>
             <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small">@_selectedMeals.Count selected</MudChip>
@@ -16,6 +16,21 @@
             <MudIconButton Icon="@(_isEdit ? Icons.Material.Filled.Save : Icons.Material.Filled.Check)" Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveMenuAsync" Disabled="@(!_selectedMeals.Any())" />
         </MudStack>
     </MudStack>
+    @if (_selectedMeals.Any())
+    {
+        var selectedMealNames = GetSelectedMealNames();
+        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center" Style="flex-wrap: wrap;" Class="mb-2">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Selected:</MudText>
+            @foreach (var mealName in selectedMealNames.Take(MaxSelectedMealNamesToShow))
+            {
+                <MudChip T="string" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small">@mealName</MudChip>
+            }
+            @if (selectedMealNames.Count > MaxSelectedMealNamesToShow)
+            {
+                <MudChip T="string" Variant="Variant.Filled" Color="Color.Default" Size="Size.Small">+@(selectedMealNames.Count - MaxSelectedMealNamesToShow) more</MudChip>
+            }
+        </MudStack>
+    }
     <MudStack>
         <MudDatePicker @bind-Date="_startDate" Label="Start date" />
     </MudStack>
@@ -49,30 +64,66 @@
 
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
         <MudText Typo="Typo.subtitle2">Select meals</MudText>
+        <MudSwitch T="bool" @bind-Value="_useCompactMealCards" Color="Color.Primary" Label="Compact cards" />
     </MudStack>
-    <MudGrid Spacing="2">
-        @foreach (var meal in _meals)
-        {
-            <MudItem xs="12" sm="6" md="4" lg="3" xl="2">
-                <MudPaper Class="@GetMealCardClass(meal)" @onclick="() => ToggleMealSelection(meal)">
-                    <MudStack Spacing="0">
-                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                            <MudText Typo="Typo.subtitle2">@meal.Name</MudText>
-                            <MudCheckBox T="bool" Value="@IsMealSelected(meal)"
-                                         ValueChanged="(value) => SetMealSelection(meal, value)"
-                                         Color="Color.Primary"
-                                         Dense="true"
-                                         @onclick:stopPropagation="true" />
+    <MudTextField @bind-Value="_mealFilterText"
+                  Placeholder="Filter meals"
+                  Immediate="true"
+                  TextUpdateSuppression="false"
+                  Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search"
+                  Class="mb-3" />
+    @if (_useCompactMealCards)
+    {
+        <MudGrid Spacing="2">
+            @foreach (var meal in GetVisibleMeals())
+            {
+                <MudItem xs="12" sm="6" md="4" lg="3" xl="2">
+                    <MudPaper Class="@GetMealCardClass(meal)" @onclick="() => ToggleMealSelection(meal)">
+                        <MudStack Spacing="0">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                <MudText Typo="Typo.subtitle2">@meal.Name</MudText>
+                                <MudCheckBox T="bool" Value="@IsMealSelected(meal)"
+                                             ValueChanged="(value) => SetMealSelection(meal, value)"
+                                             Color="Color.Primary"
+                                             Dense="true"
+                                             @onclick:stopPropagation="true" />
+                            </MudStack>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                <MudChip T="string" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Class="meal-card-chip">@meal.Category</MudChip>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@meal.IngredientCount</MudText>
+                            </MudStack>
                         </MudStack>
-                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                            <MudChip T="string" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Class="meal-card-chip">@meal.Category</MudChip>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">@meal.IngredientCount</MudText>
-                        </MudStack>
-                    </MudStack>
-                </MudPaper>
-            </MudItem>
-        }
-    </MudGrid>
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+    else
+    {
+        <MudTable T="MenuShopper.Models.Meal" Items="@GetVisibleMeals()" Hover="true" Dense="true">
+            <HeaderContent>
+                <MudTh></MudTh>
+                <MudTh>Name</MudTh>
+                <MudTh>Category</MudTh>
+                <MudTh>Ingredients</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>
+                    <MudCheckBox T="bool"
+                                 Dense="true"
+                                 Value="@IsMealSelected(context)"
+                                 ValueChanged="(value) => SetMealSelection(context, value)"
+                                 Color="Color.Primary" />
+                </MudTd>
+                <MudTd DataLabel="Name">@context.Name</MudTd>
+                <MudTd DataLabel="Category">
+                    <MudChip T="string" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small">@context.Category</MudChip>
+                </MudTd>
+                <MudTd DataLabel="Ingredients">@context.IngredientCount</MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
 </MudPaper>
 
 @code {
@@ -84,9 +135,12 @@
     private DateTime? _startDate = DateTime.Today;
     private string _mealSuggestionsOutput = string.Empty;
     private string _mealSuggestionsError = string.Empty;
+    private string _mealFilterText = string.Empty;
+    private bool _useCompactMealCards = true;
     private bool _isGeneratingMealSuggestions;
     private bool _isEdit => MenuId.HasValue;
     private string PageTitleText => _isEdit ? "Edit Menu" : "Menu Planning";
+    private const int MaxSelectedMealNamesToShow = 8;
     private const string MealSuggestionsPrompt =
         "You are a meal planning expert. Suggest exactly 10 meals from the provided meal library." +
         "\nUse the recent menu history from the previous 3 weeks to avoid repetition." +
@@ -114,6 +168,28 @@
         _startDate = _menu.Date;
         var selectedIds = _menu.MealIds.ToHashSet();
         _selectedMeals = _meals.Where(meal => selectedIds.Contains(meal.Id)).ToHashSet();
+    }
+
+    private List<string> GetSelectedMealNames()
+    {
+        return _selectedMeals
+            .Select(meal => meal.Name.Trim())
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private List<MenuShopper.Models.Meal> GetVisibleMeals()
+    {
+        var filter = _mealFilterText.Trim();
+        if (string.IsNullOrWhiteSpace(filter))
+            return _meals;
+
+        return _meals
+            .Where(meal =>
+                meal.Name.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+                meal.Category.Contains(filter, StringComparison.OrdinalIgnoreCase))
+            .ToList();
     }
 
     private async Task SaveMenuAsync()
