@@ -9,11 +9,13 @@ MenuShopper is a local-first meal planning application for building weekly menus
 - Sticky planning header with visible selected-meal count while scrolling.
 - Copilot-powered meal suggestions (10 recommendations) informed by recent menus and planning rules.
 - Copilot emoji list generation for menu summaries, including response validation.
+- Copilot recipe-to-ingredient extraction when creating/editing meals, with inline editing for quick corrections.
 - Structured meal library with categories, favourites, and dairy flags.
 - Auto-generated shopping lists with custom items, bought tracking, and Markdown export.
+- Optional Windows startup integration (prompt on first run + Settings toggle).
 
 ## 🧭 Typical workflow
-1. Add your meals to the library with category, dairy flag, favourite flag, and associated ingredients.
+1. Add your meals to the library with category, dairy flag, favourite flag, and associated ingredients (manually or by pasting a recipe and extracting ingredients via Copilot).
 2. Create a menu by selecting meals for the week in **Menu Planning**.
 3. Use Copilot suggestions to get 10 additional meal ideas based on recent history and planning rules.
 4. Save the menu to generate a shopping list automatically from all selected meal ingredients.
@@ -27,6 +29,7 @@ MenuShopper is a local-first meal planning application for building weekly menus
 ### Meals
 - Create, edit, clone, and delete meals.
 - Manage categories, ingredients, dairy flags, and favourites.
+- Paste recipe text and use Copilot to extract ingredient names into the meal, then edit any items inline.
 
 ### Menu planning
 - Build or edit menus using a compact, responsive meal-card grid.
@@ -45,12 +48,14 @@ MenuShopper is a local-first meal planning application for building weekly menus
 
 ### Settings
 - View the exact local data folder path used by the app.
+- On Windows, optionally enable/disable starting MenuShopper with Windows.
 
 ## 🤖 Copilot integration
 
 MenuShopper uses the **GitHub Copilot SDK** for:
 - in-page meal suggestions during menu planning
 - emoji list generation on menu details
+- recipe text → ingredient extraction when creating/editing meals
 
 ### Setup (local/dev)
 1. Get GitHub Copilot access (Copilot Pro/Business/Enterprise):  
@@ -104,6 +109,8 @@ To run on a different port, update `Urls` in `appsettings.json`, for example:
 ## 💾 Data storage
 MenuShopper stores data locally using JSON files under the runtime `Data` directory (including menu files in `Data/Menus`).  
 You can see the active absolute data path in the **Settings** page.
+
+The app may also store small user settings in this folder (for example, whether you have already seen the Windows startup prompt).
 
 ## 🏗️ Tech stack
 - ASP.NET Core Razor Components (.NET 10)
