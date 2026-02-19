@@ -41,6 +41,37 @@
     <MudDivider Class="my-4" />
 
     <MudText Typo="Typo.subtitle2" Class="mb-2">Ingredients</MudText>
+
+    <MudPaper Class="pa-4 mb-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <MudText Typo="Typo.subtitle1">Copilot ingredient extraction</MudText>
+            <MudIconButton Icon="@Icons.Material.Filled.AutoFixHigh" Variant="Variant.Filled" Color="Color.Primary"
+                           aria-label="Extract ingredients from recipe text"
+                           Disabled="_isExtractingIngredients" OnClick="ExtractIngredientsFromRecipeAsync" />
+        </MudStack>
+
+        <MudTextField @bind-Value="_recipeText"
+                      Label="Paste recipe text"
+                      Lines="6"
+                      AutoGrow="true"
+                      Immediate="true"
+                      TextUpdateSuppression="false"
+                      Class="mt-2" />
+
+        @if (_isExtractingIngredients)
+        {
+            <MudProgressLinear Indeterminate="true" Class="mt-2" />
+        }
+        @if (!string.IsNullOrWhiteSpace(_recipeIngredientsMessage))
+        {
+            <MudAlert Severity="Severity.Success" Class="mt-2">@_recipeIngredientsMessage</MudAlert>
+        }
+        @if (!string.IsNullOrWhiteSpace(_recipeIngredientsError))
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-2">@_recipeIngredientsError</MudAlert>
+        }
+    </MudPaper>
+
     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-4">
         <MudTextField @bind-Value="_newIngredient"
                       Placeholder="Add ingredient"
@@ -50,18 +81,24 @@
         <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Filled" OnClick="AddIngredient" />
     </MudStack>
 
-    <MudTable Items="_meal.Ingredients" Hover="true" Dense="true">
+    <MudTable T="IngredientRow" Items="@GetIngredientRows()" Hover="true" Dense="true">
         <HeaderContent>
             <MudTh>Ingredient</MudTh>
             <MudTh></MudTh>
         </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Ingredient">@context</MudTd>
-            <MudTd>
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => RemoveIngredientAsync(context)" />
-            </MudTd>
-        </RowTemplate>
-    </MudTable>
+     <RowTemplate>
+         <MudTd DataLabel="Ingredient" Style="width: 100%">
+             <MudTextField Value="@context.Value"
+                           ValueChanged="(string value) => UpdateIngredient(context.Index, value)"
+                           Immediate="true"
+                           TextUpdateSuppression="false"
+                           Margin="Margin.Dense" />
+         </MudTd>
+         <MudTd>
+             <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => RemoveIngredientAtAsync(context.Index)" />
+         </MudTd>
+     </RowTemplate>
+ </MudTable>
 
 </MudPaper>
 
@@ -71,9 +108,21 @@
 
     private MenuShopper.Models.Meal _meal = new();
     private string _newIngredient = string.Empty;
+    private string _recipeText = string.Empty;
+    private bool _isExtractingIngredients;
+    private string _recipeIngredientsError = string.Empty;
+    private string _recipeIngredientsMessage = string.Empty;
     private string _title = "Add Meal";
     private bool _isNew = true;
     private List<string> _categories = [];
+    private const int MaxExtractedIngredients = 40;
+    private const string RecipeIngredientsPrompt =
+        "You are extracting ingredients from a recipe for a meal planner." +
+        "\nReturn ONLY ingredient names, one per line." +
+        "\nCapitalize the first letter of each ingredient line (e.g., 'Onion', 'Olive oil')." +
+        "\nDo not include quantities, units, headings, numbering, bullets, or any extra text." +
+        "\nDo not repeat ingredients." +
+        "\n\nRecipe text:";
 
     protected override async Task OnInitializedAsync()
     {
@@ -129,12 +178,159 @@
         }
     }
 
-    private async Task RemoveIngredientAsync(string ingredient)
+    private List<IngredientRow> GetIngredientRows()
     {
+        return _meal.Ingredients.Select((value, index) => new IngredientRow(index, value)).ToList();
+    }
+
+    private void UpdateIngredient(int index, string value)
+    {
+        if (index < 0 || index >= _meal.Ingredients.Count)
+            return;
+
+        _meal.Ingredients[index] = value;
+    }
+
+    private async Task RemoveIngredientAtAsync(int index)
+    {
+        if (index < 0 || index >= _meal.Ingredients.Count)
+            return;
+
+        var ingredient = _meal.Ingredients[index];
         if (!await ConfirmDeleteAsync("Delete ingredient", $"Delete '{ingredient}' from this meal?"))
             return;
 
-        _meal.Ingredients.Remove(ingredient);
+        _meal.Ingredients.RemoveAt(index);
+    }
+
+    private async Task ExtractIngredientsFromRecipeAsync()
+    {
+        if (_isExtractingIngredients)
+            return;
+
+        var recipeText = _recipeText.Trim();
+        if (string.IsNullOrWhiteSpace(recipeText))
+        {
+            _recipeIngredientsMessage = string.Empty;
+            _recipeIngredientsError = "Paste some recipe text first.";
+            return;
+        }
+
+        _isExtractingIngredients = true;
+        _recipeIngredientsError = string.Empty;
+        _recipeIngredientsMessage = string.Empty;
+
+        try
+        {
+            var response = await DataService.SendCopilotPromptAsync(
+                $"{RecipeIngredientsPrompt}\n{recipeText}",
+                "gpt-5.2",
+                "high",
+                TimeSpan.FromMinutes(3),
+                CancellationToken.None
+            );
+
+            if (string.IsNullOrWhiteSpace(response))
+            {
+                _recipeIngredientsError = "No response received.";
+                return;
+            }
+
+            var extracted = ParseIngredientsOutput(response);
+            if (extracted.Count == 0)
+            {
+                _recipeIngredientsError = "No ingredients could be extracted. Try again or paste more of the ingredients section.";
+                return;
+            }
+
+            var added = AddIngredients(extracted);
+            if (added == 0)
+            {
+                _recipeIngredientsError = "No new ingredients were added (they may already exist).";
+                return;
+            }
+
+            _recipeIngredientsMessage = $"Added {added} ingredient(s). Please review and edit as needed.";
+            _recipeText = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            _recipeIngredientsError = ex.Message;
+        }
+        finally
+        {
+            _isExtractingIngredients = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private int AddIngredients(IEnumerable<string> ingredients)
+    {
+        var existing = _meal.Ingredients.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var added = 0;
+
+        foreach (var ingredient in ingredients)
+        {
+            var text = ingredient.Trim();
+            if (string.IsNullOrWhiteSpace(text))
+                continue;
+
+            if (!existing.Add(text))
+                continue;
+
+            _meal.Ingredients.Add(text);
+            added++;
+        }
+
+        return added;
+    }
+
+    private List<string> ParseIngredientsOutput(string output)
+    {
+        var normalized = output
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(NormalizeIngredientLine)
+            .Where(line => !string.IsNullOrWhiteSpace(line))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(MaxExtractedIngredients)
+            .ToList();
+
+        return normalized;
+    }
+
+    private static string NormalizeIngredientLine(string line)
+    {
+        var text = line.Trim();
+        if (string.IsNullOrWhiteSpace(text))
+            return string.Empty;
+
+        if (text.EndsWith(':'))
+            return string.Empty;
+
+        // Strip common bullet prefixes.
+        text = text.TrimStart('-', '*', '\u2022', '\u00B7', '\u2013').Trim();
+
+        // Strip common numbering prefixes (e.g. "1.", "2)", "3 -").
+        var idx = 0;
+        while (idx < text.Length && char.IsDigit(text[idx]))
+            idx++;
+
+        if (idx > 0 && idx < text.Length)
+        {
+            while (idx < text.Length && (text[idx] == '.' || text[idx] == ')' || text[idx] == '-' || char.IsWhiteSpace(text[idx])))
+                idx++;
+
+            text = text[idx..].Trim();
+        }
+
+        text = text.Trim().TrimEnd(',', ';', '.');
+        if (text.Length == 0)
+            return string.Empty;
+
+        if (char.IsLetter(text[0]) && char.IsLower(text[0]))
+            return char.ToUpperInvariant(text[0]) + text[1..];
+
+        return text;
     }
 
     private async Task Save()
@@ -183,4 +379,6 @@
         var result = await DialogService.ShowMessageBox(options, new DialogOptions { CloseOnEscapeKey = true });
         return result == true;
     }
+
+    private record IngredientRow(int Index, string Value);
 }
