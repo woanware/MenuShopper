@@ -21,6 +21,7 @@ builder.Services.AddMudServices();
 // Add services to the container.
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddSingleton<DataService>();
+builder.Services.AddSingleton<WindowsAutoStartService>();
 
 var app = builder.Build();
 

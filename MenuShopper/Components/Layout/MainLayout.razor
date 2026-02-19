@@ -1,4 +1,8 @@
 @inherits LayoutComponentBase
+@inject MenuShopper.Services.DataService DataService
+@inject MenuShopper.Services.WindowsAutoStartService AutoStartService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
 
 <MudThemeProvider IsDarkMode="true" Theme="@_theme" />
 <MudPopoverProvider />
@@ -38,4 +42,89 @@
             Secondary = "#90CAF9"
         }
     };
+
+    private bool _checkedAutoStartPrompt;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _checkedAutoStartPrompt)
+            return;
+
+        _checkedAutoStartPrompt = true;
+
+        if (!OperatingSystem.IsWindows())
+            return;
+
+        MenuShopper.Models.UserSettings settings;
+        try
+        {
+            settings = await DataService.LoadUserSettingsAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Couldn't load user settings: {ex.Message}", Severity.Warning);
+            return;
+        }
+
+        if (settings.HasSeenAutoStartPrompt)
+            return;
+
+        var alreadyEnabled = false;
+        try
+        {
+            alreadyEnabled = AutoStartService.IsEnabled();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Couldn't check Windows startup: {ex.Message}", Severity.Warning);
+        }
+
+        if (alreadyEnabled)
+        {
+            settings.HasSeenAutoStartPrompt = true;
+            try
+            {
+                await DataService.SaveUserSettingsAsync(settings);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Couldn't save user settings: {ex.Message}", Severity.Warning);
+            }
+
+            return;
+        }
+
+        var options = new MessageBoxOptions
+        {
+            Title = "Start with Windows?",
+            Message = "Start MenuShopper automatically when you sign into Windows?",
+            YesText = "Enable",
+            CancelText = "No thanks"
+        };
+
+        var result = await DialogService.ShowMessageBox(options, new DialogOptions { CloseOnEscapeKey = true });
+
+        if (result == true)
+        {
+            try
+            {
+                AutoStartService.Enable();
+                Snackbar.Add("MenuShopper will start with Windows.", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Couldn't enable Windows startup: {ex.Message}", Severity.Error);
+            }
+        }
+
+        settings.HasSeenAutoStartPrompt = true;
+        try
+        {
+            await DataService.SaveUserSettingsAsync(settings);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Couldn't save user settings: {ex.Message}", Severity.Warning);
+        }
+    }
 }

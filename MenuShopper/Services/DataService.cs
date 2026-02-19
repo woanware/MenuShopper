@@ -9,9 +9,11 @@ public class DataService : IAsyncDisposable
     private const string MealsFileName = "meals.json";
     private const string CategoriesFileName = "categories.json";
     private const string MenusFolderName = "Menus";
+    private const string UserSettingsFileName = "user-settings.json";
 
     private readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
     private readonly SemaphoreSlim _menuSaveLock = new(1, 1);
+    private readonly SemaphoreSlim _userSettingsLock = new(1, 1);
     private readonly CopilotClient _copilotClient = new();
 
     private List<Meal> _meals = [];
@@ -22,6 +24,7 @@ public class DataService : IAsyncDisposable
     private string MealsFilePath => Path.Combine(BaseDataPath, MealsFileName);
     private string MenusFolderPath => Path.Combine(BaseDataPath, MenusFolderName);
     private string CategoriesFilePath => Path.Combine(BaseDataPath, CategoriesFileName);
+    private string UserSettingsFilePath => Path.Combine(BaseDataPath, UserSettingsFileName);
 
     public async Task<List<Meal>> LoadMealsAsync()
     {
@@ -243,9 +246,52 @@ public class DataService : IAsyncDisposable
 
     public string GetDataFolderPath() => BaseDataPath;
 
+    public async Task<UserSettings> LoadUserSettingsAsync()
+    {
+        await _userSettingsLock.WaitAsync();
+        try
+        {
+            Directory.CreateDirectory(BaseDataPath);
+
+            if (!File.Exists(UserSettingsFilePath))
+                return new UserSettings();
+
+            var json = await File.ReadAllTextAsync(UserSettingsFilePath);
+            try
+            {
+                return JsonSerializer.Deserialize<UserSettings>(json) ?? new UserSettings();
+            }
+            catch (JsonException ex)
+            {
+                Console.WriteLine($"Invalid user settings JSON at '{UserSettingsFilePath}': {ex.Message}");
+                return new UserSettings();
+            }
+        }
+        finally
+        {
+            _userSettingsLock.Release();
+        }
+    }
+
+    public async Task SaveUserSettingsAsync(UserSettings settings)
+    {
+        await _userSettingsLock.WaitAsync();
+        try
+        {
+            Directory.CreateDirectory(BaseDataPath);
+            var json = JsonSerializer.Serialize(settings, _jsonOptions);
+            await File.WriteAllTextAsync(UserSettingsFilePath, json);
+        }
+        finally
+        {
+            _userSettingsLock.Release();
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
         _menuSaveLock.Dispose();
+        _userSettingsLock.Dispose();
         await _copilotClient.DisposeAsync();
     }
 }
