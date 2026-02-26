@@ -4,10 +4,15 @@
 
 <PageTitle>Meals</PageTitle>
 
-<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
-    <MudText Typo="Typo.h5">Meals</MudText>
-    <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Filled" Href="/meals/new" />
-</MudStack>
+<MudPaper Class="pa-4 mb-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+            <MudText Typo="Typo.h5">Meals</MudText>
+            <MudChip T="string" Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Small">@_meals.Count total</MudChip>
+        </MudStack>
+        <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Filled" Href="/meals/new" />
+    </MudStack>
+</MudPaper>
 
 <MudTable Items="_meals" Hover="true" Dense="true">
     <HeaderContent>

@@ -12,7 +12,10 @@
             <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small">@_selectedMeals.Count selected</MudChip>
         </MudStack>
         <MudStack Row="true" Spacing="2">
-            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Filled" OnClick="Cancel" />
+            @if (_isEdit)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Filled" OnClick="GoBackFromEdit" />
+            }
             <MudIconButton Icon="@(_isEdit ? Icons.Material.Filled.Save : Icons.Material.Filled.Check)" Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveMenuAsync" Disabled="@(!_selectedMeals.Any())" />
         </MudStack>
     </MudStack>
@@ -32,13 +35,13 @@
         </MudStack>
     }
     <MudStack>
-        <MudDatePicker @bind-Date="_startDate" Label="Start date" />
+        <MudDatePicker @bind-Date="_startDate" Label="Date" />
     </MudStack>
 </MudPaper>
 
 <MudPaper Class="pa-4 mb-4">
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-        <MudText Typo="Typo.subtitle1">Copilot meal suggestions</MudText>
+        <MudText Typo="Typo.subtitle1">Meal Suggestions</MudText>
         <MudIconButton Icon="@Icons.Material.Filled.RestaurantMenu" Variant="Variant.Filled" Color="Color.Primary"
                        aria-label="Suggest 10 meals"
                        Disabled="_isGeneratingMealSuggestions" OnClick="GenerateMealSuggestionsAsync" />
@@ -60,10 +63,7 @@
 </MudPaper>
 
 <MudPaper Class="pa-4">
-    <MudDivider Class="mb-4" />
-
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
-        <MudText Typo="Typo.subtitle2">Select meals</MudText>
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.FlexEnd" Class="mb-2">
         <MudSwitch T="bool" @bind-Value="_useCompactMealCards" Color="Color.Primary" Label="Compact cards" />
     </MudStack>
     <MudTextField @bind-Value="_mealFilterText"
@@ -156,7 +156,11 @@
         await DataService.LoadMenusAsync();
         _meals = DataService.GetMeals().OrderBy(m => m.Name).ToList();
         if (!_isEdit)
+        {
+            var userSettings = await DataService.LoadUserSettingsAsync();
+            ApplyDefaultMealSelection(userSettings);
             return;
+        }
 
         _menu = DataService.FindMenuById(MenuId!.Value);
         if (_menu == null)
@@ -426,11 +430,6 @@
         return text;
     }
 
-    private void Cancel()
-    {
-        Nav.NavigateTo("/menus");
-    }
-
     private bool IsMealSelected(MenuShopper.Models.Meal meal) => _selectedMeals.Contains(meal);
 
     private void ToggleMealSelection(MenuShopper.Models.Meal meal)
@@ -445,6 +444,31 @@
             _selectedMeals.Add(meal);
         else
             _selectedMeals.Remove(meal);
+    }
+
+    private void GoBackFromEdit()
+    {
+        if (MenuId.HasValue)
+        {
+            Nav.NavigateTo($"/menus/{MenuId.Value}");
+            return;
+        }
+
+        Nav.NavigateTo("/menus");
+    }
+
+    private void ApplyDefaultMealSelection(MenuShopper.Models.UserSettings settings)
+    {
+        var defaultMealNames = settings.DefaultMealNames
+            .Select(name => name?.Trim() ?? string.Empty)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (defaultMealNames.Count == 0)
+            return;
+
+        _selectedMeals = _meals
+            .Where(meal => defaultMealNames.Contains(meal.Name))
+            .ToHashSet();
     }
 
     private string GetMealCardClass(MenuShopper.Models.Meal meal)

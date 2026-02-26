@@ -5,7 +5,14 @@
 
 <PageTitle>Settings</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-4">Settings</MudText>
+<MudPaper Class="pa-4 mb-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+            <MudText Typo="Typo.h5">Settings</MudText>
+            <MudChip T="string" Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Small">Preferences</MudChip>
+        </MudStack>
+    </MudStack>
+</MudPaper>
 
 <MudPaper Class="pa-4">
     <MudText Typo="Typo.subtitle2">Data folder</MudText>

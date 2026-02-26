@@ -1,54 +1,26 @@
 @page "/menus/{MenuId:guid}"
 @inject MenuShopper.Services.DataService DataService
-@inject NavigationManager Nav
 @inject IJSRuntime JS
 
 <PageTitle>Menu Details</PageTitle>
 
-<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3">
-    <MudText Typo="Typo.h5">Menu Details</MudText>
-    <MudStack Row="true" Spacing="2">
-        <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Filled" Href="@($"/menus/edit/{MenuId}")" />
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Filled" OnClick="GoBack" />
-    </MudStack>
-</MudStack>
-
 <MudPaper Class="pa-4 mb-4">
-    <MudGrid Spacing="2">
-        <MudItem xs="12" sm="4">
-            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                <MudAvatar Square="true" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Medium">
-                    <MudIcon Icon="@Icons.Material.Filled.Event" />
-                </MudAvatar>
-                <MudStack Spacing="0">
-                    <MudText Typo="Typo.caption">Start date</MudText>
-                    <MudText Typo="Typo.h6">@_startDate</MudText>
-                </MudStack>
+    <MudStack Spacing="2">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudText Typo="Typo.h5">Menu Details</MudText>
             </MudStack>
-        </MudItem>
-        <MudItem xs="12" sm="4">
-            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                <MudAvatar Square="true" Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Medium">
-                    <MudIcon Icon="@Icons.Material.Filled.Restaurant" />
-                </MudAvatar>
-                <MudStack Spacing="0">
-                    <MudText Typo="Typo.caption">Meals</MudText>
-                    <MudText Typo="Typo.h6">@_mealCount</MudText>
-                </MudStack>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudIconButton Icon="@Icons.Material.Filled.ShoppingCart" Variant="Variant.Filled" Color="Color.Primary" Href="@($"/shopping-lists/{MenuId}")" />
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Variant="Variant.Filled" Color="Color.Primary" Href="@($"/menus/edit/{MenuId}")" />
             </MudStack>
-        </MudItem>
-        <MudItem xs="12" sm="4">
-            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                <MudAvatar Square="true" Color="Color.Info" Variant="Variant.Filled" Size="Size.Medium">
-                    <MudIcon Icon="@Icons.Material.Filled.ShoppingCart" />
-                </MudAvatar>
-                <MudStack Spacing="0">
-                    <MudText Typo="Typo.caption">Items</MudText>
-                    <MudText Typo="Typo.h6">@_itemCount</MudText>
-                </MudStack>
-            </MudStack>
-        </MudItem>
-    </MudGrid>
+        </MudStack>
+        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center" Style="flex-wrap: wrap;">
+            <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Icon="@Icons.Material.Filled.Event">@_startDate</MudChip>
+            <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Icon="@Icons.Material.Filled.Restaurant">@_mealCount meal@(_mealCount == 1 ? string.Empty : "s")</MudChip>
+            <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small" Icon="@Icons.Material.Filled.ShoppingCart">@_itemCount item@(_itemCount == 1 ? string.Empty : "s")</MudChip>
+        </MudStack>
+    </MudStack>
 </MudPaper>
 
 <MudPaper Class="pa-4 mb-4">
@@ -97,9 +69,9 @@
     [Parameter] public Guid MenuId { get; set; }
 
     private string _startDate = string.Empty;
-    private List<MenuShopper.Models.Meal> _meals = [];
     private int _mealCount;
     private int _itemCount;
+    private List<MenuShopper.Models.Meal> _meals = [];
     private string _emojiListOutput = string.Empty;
     private string _copilotError = string.Empty;
     private bool _isGenerating;
@@ -125,8 +97,6 @@
             .Cast<MenuShopper.Models.Meal>()
             .ToList();
     }
-
-    private void GoBack() => Nav.NavigateTo("/menus");
 
     private async Task GenerateEmojiListAsync()
     {

@@ -6,23 +6,39 @@
 
 <PageTitle>Shopping List</PageTitle>
 
-<MudStack Class="mb-2" Spacing="0">
+<MudPaper Class="pa-4 mb-4">
+    <MudStack Spacing="2">
         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                 <MudText Typo="Typo.h5">Shopping List</MudText>
                 <MudChip T="string" Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Small">@RemainingItemCount to get</MudChip>
             </MudStack>
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-            <MudSwitch T="bool" @bind-Value="_useCompactShoppingCards" Color="Color.Primary" Label="Compact cards" />
             <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
                        Disabled="@(!_items.Any())" OnClick="ExportItemsAsync">
                 Export
             </MudButton>
+        </MudStack>
+        <MudText Typo="Typo.body2">@_subtitle</MudText>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Style="flex-wrap: wrap;">
+            <MudSwitch T="bool" @bind-Value="_useCompactShoppingCards" Color="Color.Primary" Label="Compact cards" />
             <MudCheckBox T="bool" @bind-Value="_skipDeleteConfirmation" Label="Delete without confirmation" />
         </MudStack>
+        @if (_mealNames.Count > 0)
+        {
+            <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center" Style="flex-wrap: wrap;">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Meals:</MudText>
+                @foreach (var mealName in _mealNames.Take(MaxMealNamesToShow))
+                {
+                    <MudChip T="string" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small">@mealName</MudChip>
+                }
+                @if (_mealNames.Count > MaxMealNamesToShow)
+                {
+                    <MudChip T="string" Variant="Variant.Filled" Color="Color.Default" Size="Size.Small">+@(_mealNames.Count - MaxMealNamesToShow) more</MudChip>
+                }
+            </MudStack>
+        }
     </MudStack>
-    <MudText Typo="Typo.body2" Class="mb-4">@_subtitle</MudText>
-</MudStack>
+</MudPaper>
 
     <MudPaper Class="pa-4 mb-4">
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
@@ -43,7 +59,7 @@
             <MudItem xs="12" sm="6" md="4" lg="3">
                 <MudPaper Class="@GetItemCardClass(item)">
                     <MudStack Spacing="1">
-                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width: 100%;">
                             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                                 <MudCheckBox T="bool"
                                              Dense="true"
@@ -54,6 +70,7 @@
                             <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                            Size="Size.Small"
                                            Color="Color.Error"
+                                           Style="margin-left: auto;"
                                            OnClick="() => DeleteItemAsync(item)" />
                         </MudStack>
                         @if (!string.IsNullOrWhiteSpace(item.MealNamesText))
@@ -88,7 +105,7 @@ else
             <MudTd DataLabel="From">
                 <MudText Typo="Typo.caption" Color="Color.Secondary">@context.MealNamesText</MudText>
             </MudTd>
-            <MudTd>
+            <MudTd Style="text-align: right; width: 1%;">
                 <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                Size="Size.Small"
                                Color="Color.Error"
@@ -105,9 +122,11 @@ else
     private List<MenuShopper.Models.ShoppingListItem> _items = [];
     private string _newItem = string.Empty;
     private string _subtitle = string.Empty;
+    private List<string> _mealNames = [];
     private int RemainingItemCount => _items.Count(item => !item.IsBought);
     private bool _skipDeleteConfirmation;
     private bool _useCompactShoppingCards = true;
+    private const int MaxMealNamesToShow = 8;
 
     protected override async Task OnInitializedAsync()
     {
@@ -120,8 +139,20 @@ else
             return;
         }
 
-        _subtitle = $"Menu start date: {_menu.DisplayDate}";
+        _subtitle = $"Menu date: {_menu.DisplayDate}";
+        _mealNames = GetMealNames(_menu);
         _items = _menu.ShoppingItems.ToList();
+    }
+
+    private List<string> GetMealNames(MenuShopper.Models.Menu menu)
+    {
+        return menu.MealIds
+            .Select(id => DataService.FindMealById(id)?.Name?.Trim())
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Cast<string>()
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     private async Task ToggleBoughtAsync(MenuShopper.Models.ShoppingListItem item, bool value)
