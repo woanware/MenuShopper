@@ -7,17 +7,17 @@ MenuShopper is a local-first meal planning application for building weekly menus
 ## ✨ Highlights
 - Responsive, multi-column card layouts for menu planning and shopping lists.
 - Sticky planning header with visible selected-meal count while scrolling.
-- Copilot-powered meal suggestions (10 recommendations) informed by recent menus and planning rules.
+- Meal Suggestions (Copilot-powered, 10 recommendations) informed by recent menus and planning rules.
 - Copilot emoji list generation for menu summaries, including response validation.
-- Copilot recipe-to-ingredient extraction when creating/editing meals, with inline editing for quick corrections.
+- Ingredient Extraction (Copilot-powered recipe-to-ingredient parsing) when creating/editing meals, with inline editing for quick corrections.
 - Structured meal library with categories, favourites, and dairy flags.
 - Auto-generated shopping lists with custom items, bought tracking, and Markdown export.
 - Optional Windows startup integration (prompt on first run + Settings toggle).
 
 ## 🧭 Typical workflow
-1. Add your meals to the library with category, dairy flag, favourite flag, and associated ingredients (manually or by pasting a recipe and extracting ingredients via Copilot).
+1. Add your meals to the library with category, dairy flag, favourite flag, and associated ingredients (manually or by pasting a recipe and using Ingredient Extraction).
 2. Create a menu by selecting meals for the week in **Menu Planning**.
-3. Use Copilot suggestions to get 10 additional meal ideas based on recent history and planning rules.
+3. Use Meal Suggestions to get 10 additional meal ideas based on recent history and planning rules.
 4. Save the menu to generate a shopping list automatically from all selected meal ingredients.
 5. Update, check off, and export your shopping list for use on mobile, desktop, or print.
 
@@ -29,15 +29,15 @@ MenuShopper is a local-first meal planning application for building weekly menus
 ### Meals
 - Create, edit, clone, and delete meals.
 - Manage categories, ingredients, dairy flags, and favourites.
-- Paste recipe text and use Copilot to extract ingredient names into the meal, then edit any items inline.
+- Paste recipe text and use Ingredient Extraction to extract ingredient names into the meal, then edit any items inline.
 
 ### Menu planning
 - Build or edit menus using a compact, responsive meal-card grid.
 - Select meals quickly with clear visual selection states.
-- Generate Copilot meal suggestions in-page and review results in a dedicated output panel.
+- Generate Meal Suggestions in-page and review results in a dedicated output panel.
 
 ### Menu details
-- Review menu metadata (start date, meal count, item count).
+- Review menu metadata (date, meal count, item count).
 - Generate and copy an emoji-formatted meal list via Copilot.
 
 ### Shopping lists
@@ -53,9 +53,9 @@ MenuShopper is a local-first meal planning application for building weekly menus
 ## 🤖 Copilot integration
 
 MenuShopper uses the **GitHub Copilot SDK** for:
-- in-page meal suggestions during menu planning
+- in-page Meal Suggestions during menu planning
 - emoji list generation on menu details
-- recipe text → ingredient extraction when creating/editing meals
+- recipe text → Ingredient Extraction when creating/editing meals
 
 ### Setup (local/dev)
 1. Get GitHub Copilot access (Copilot Pro/Business/Enterprise):  
