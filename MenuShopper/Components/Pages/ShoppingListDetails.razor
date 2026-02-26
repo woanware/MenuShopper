@@ -21,7 +21,21 @@
             <MudCheckBox T="bool" @bind-Value="_skipDeleteConfirmation" Label="Delete without confirmation" />
         </MudStack>
     </MudStack>
-    <MudText Typo="Typo.body2" Class="mb-4">@_subtitle</MudText>
+    <MudText Typo="Typo.body2" Class="mb-2">@_subtitle</MudText>
+    @if (_mealNames.Count > 0)
+    {
+        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center" Style="flex-wrap: wrap;" Class="mb-4">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Meals:</MudText>
+            @foreach (var mealName in _mealNames.Take(MaxMealNamesToShow))
+            {
+                <MudChip T="string" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small">@mealName</MudChip>
+            }
+            @if (_mealNames.Count > MaxMealNamesToShow)
+            {
+                <MudChip T="string" Variant="Variant.Filled" Color="Color.Default" Size="Size.Small">+@(_mealNames.Count - MaxMealNamesToShow) more</MudChip>
+            }
+        </MudStack>
+    }
 </MudStack>
 
     <MudPaper Class="pa-4 mb-4">
@@ -105,9 +119,11 @@ else
     private List<MenuShopper.Models.ShoppingListItem> _items = [];
     private string _newItem = string.Empty;
     private string _subtitle = string.Empty;
+    private List<string> _mealNames = [];
     private int RemainingItemCount => _items.Count(item => !item.IsBought);
     private bool _skipDeleteConfirmation;
     private bool _useCompactShoppingCards = true;
+    private const int MaxMealNamesToShow = 8;
 
     protected override async Task OnInitializedAsync()
     {
@@ -121,7 +137,19 @@ else
         }
 
         _subtitle = $"Menu start date: {_menu.DisplayDate}";
+        _mealNames = GetMealNames(_menu);
         _items = _menu.ShoppingItems.ToList();
+    }
+
+    private List<string> GetMealNames(MenuShopper.Models.Menu menu)
+    {
+        return menu.MealIds
+            .Select(id => DataService.FindMealById(id)?.Name?.Trim())
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Cast<string>()
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     private async Task ToggleBoughtAsync(MenuShopper.Models.ShoppingListItem item, bool value)
