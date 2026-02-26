@@ -10,6 +10,7 @@ public class DataService : IAsyncDisposable
     private const string CategoriesFileName = "categories.json";
     private const string MenusFolderName = "Menus";
     private const string UserSettingsFileName = "user-settings.json";
+    private static readonly string[] SeedDefaultMealNames = ["Oven", "Easy"];
 
     private readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
     private readonly SemaphoreSlim _menuSaveLock = new(1, 1);
@@ -254,17 +255,34 @@ public class DataService : IAsyncDisposable
             Directory.CreateDirectory(BaseDataPath);
 
             if (!File.Exists(UserSettingsFilePath))
-                return new UserSettings();
+            {
+                var defaultSettings = new UserSettings();
+                EnsureDefaultMealNames(defaultSettings);
+                var defaultJson = JsonSerializer.Serialize(defaultSettings, _jsonOptions);
+                await File.WriteAllTextAsync(UserSettingsFilePath, defaultJson);
+                return defaultSettings;
+            }
 
             var json = await File.ReadAllTextAsync(UserSettingsFilePath);
             try
             {
-                return JsonSerializer.Deserialize<UserSettings>(json) ?? new UserSettings();
+                var settings = JsonSerializer.Deserialize<UserSettings>(json) ?? new UserSettings();
+                if (EnsureDefaultMealNames(settings))
+                {
+                    var normalizedJson = JsonSerializer.Serialize(settings, _jsonOptions);
+                    await File.WriteAllTextAsync(UserSettingsFilePath, normalizedJson);
+                }
+
+                return settings;
             }
             catch (JsonException ex)
             {
                 Console.WriteLine($"Invalid user settings JSON at '{UserSettingsFilePath}': {ex.Message}");
-                return new UserSettings();
+                var defaultSettings = new UserSettings();
+                EnsureDefaultMealNames(defaultSettings);
+                var defaultJson = JsonSerializer.Serialize(defaultSettings, _jsonOptions);
+                await File.WriteAllTextAsync(UserSettingsFilePath, defaultJson);
+                return defaultSettings;
             }
         }
         finally
@@ -279,6 +297,7 @@ public class DataService : IAsyncDisposable
         try
         {
             Directory.CreateDirectory(BaseDataPath);
+            EnsureDefaultMealNames(settings);
             var json = JsonSerializer.Serialize(settings, _jsonOptions);
             await File.WriteAllTextAsync(UserSettingsFilePath, json);
         }
@@ -286,6 +305,24 @@ public class DataService : IAsyncDisposable
         {
             _userSettingsLock.Release();
         }
+    }
+
+    private static bool EnsureDefaultMealNames(UserSettings settings)
+    {
+        var existing = settings.DefaultMealNames ?? [];
+        var normalized = existing
+            .Select(name => name?.Trim() ?? string.Empty)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (normalized.Count == 0)
+            normalized = SeedDefaultMealNames.ToList();
+
+        var changed = existing.Count != normalized.Count || !existing.SequenceEqual(normalized, StringComparer.OrdinalIgnoreCase);
+        if (changed)
+            settings.DefaultMealNames = normalized;
+
+        return changed;
     }
 
     public async ValueTask DisposeAsync()

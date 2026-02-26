@@ -7,17 +7,23 @@
 
 <PageTitle>@_title</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-4">@_title</MudText>
+<MudPaper Class="pa-4 mb-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+            <MudText Typo="Typo.h5">@_title</MudText>
+            <MudChip T="string" Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Small">@(_isNew ? "New" : "Editing")</MudChip>
+        </MudStack>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            @if (!_isNew)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" />
+            }
+            <MudIconButton Icon="@Icons.Material.Filled.Check" Variant="Variant.Filled" Color="Color.Primary" OnClick="Save" />
+        </MudStack>
+    </MudStack>
+</MudPaper>
 
 <MudPaper Class="pa-4">
-    <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2" Class="mb-4">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Filled" OnClick="Cancel" />
-        @if (!_isNew)
-        {
-            <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Filled" Color="Color.Error" OnClick="Delete" />
-        }
-        <MudIconButton Icon="@Icons.Material.Filled.Check" Variant="Variant.Filled" Color="Color.Primary" OnClick="Save" />
-    </MudStack>
     <MudGrid Spacing="2">
         <MudItem xs="12" md="6">
             <MudTextField @bind-Value="_meal.Name" Label="Meal Name" Required="true" />
@@ -44,7 +50,7 @@
 
     <MudPaper Class="pa-4 mb-4">
         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-            <MudText Typo="Typo.subtitle1">Copilot ingredient extraction</MudText>
+            <MudText Typo="Typo.subtitle1">Ingredient Extraction</MudText>
             <MudIconButton Icon="@Icons.Material.Filled.AutoFixHigh" Variant="Variant.Filled" Color="Color.Primary"
                            aria-label="Extract ingredients from recipe text"
                            Disabled="_isExtractingIngredients" OnClick="ExtractIngredientsFromRecipeAsync" />
@@ -127,7 +133,12 @@
     protected override async Task OnInitializedAsync()
     {
         await DataService.LoadMealsAsync();
-        _categories = await DataService.LoadCategoriesAsync();
+        _categories = (await DataService.LoadCategoriesAsync())
+            .Select(category => category?.Trim() ?? string.Empty)
+            .Where(category => !string.IsNullOrWhiteSpace(category))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(category => category, StringComparer.OrdinalIgnoreCase)
+            .ToList();
         if (_categories.Count == 0)
             _categories = ["Other"];
         if (CloneId.HasValue)
@@ -354,8 +365,6 @@
 
         Nav.NavigateTo("/meals");
     }
-
-    private void Cancel() => Nav.NavigateTo("/meals");
 
     private async Task Delete()
     {
