@@ -45,7 +45,6 @@
             <MudTextField @bind-Value="_newItem"
                           Placeholder="Add extra item"
                           Immediate="true"
-                          TextUpdateSuppression="false"
                           OnKeyUp="HandleAddKeyUp" />
             <MudIconButton Icon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" OnClick="AddItem" />
         </MudStack>
@@ -227,7 +226,7 @@ else
             CancelText = "Cancel"
         };
 
-        var result = await DialogService.ShowMessageBox(options, new DialogOptions { CloseOnEscapeKey = true });
+        var result = await DialogService.ShowMessageBoxAsync(options, new DialogOptions { CloseOnEscapeKey = true });
         return result == true;
     }
 

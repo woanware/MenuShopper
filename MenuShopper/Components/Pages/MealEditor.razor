@@ -59,9 +59,8 @@
         <MudTextField @bind-Value="_recipeText"
                       Label="Paste recipe text"
                       Lines="6"
-                      AutoGrow="true"
+                      Sizing="InputSizing.Auto"
                       Immediate="true"
-                      TextUpdateSuppression="false"
                       Class="mt-2" />
 
         @if (_isExtractingIngredients)
@@ -82,7 +81,6 @@
         <MudTextField @bind-Value="_newIngredient"
                       Placeholder="Add ingredient"
                       Immediate="true"
-                      TextUpdateSuppression="false"
                       OnKeyDown="HandleIngredientKeyDown" />
         <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Filled" OnClick="AddIngredient" />
     </MudStack>
@@ -96,7 +94,6 @@
              <MudTd DataLabel="Ingredient" Style="width: 100%">
                  <MudTextField Value="@context.Value"
                                ValueChanged="(string value) => UpdateIngredient(context.Index, value)"
-                               TextUpdateSuppression="false"
                                Margin="Margin.Dense"
                                @key="context.Index" />
              </MudTd>
@@ -385,7 +382,7 @@
             CancelText = "Cancel"
         };
 
-        var result = await DialogService.ShowMessageBox(options, new DialogOptions { CloseOnEscapeKey = true });
+        var result = await DialogService.ShowMessageBoxAsync(options, new DialogOptions { CloseOnEscapeKey = true });
         return result == true;
     }
 
