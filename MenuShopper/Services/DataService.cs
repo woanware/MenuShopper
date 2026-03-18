@@ -237,7 +237,11 @@ public class DataService : IAsyncDisposable
     )
     {
         await using var session = await _copilotClient.CreateSessionAsync(
-            new SessionConfig { Model = model }
+            new SessionConfig
+            {
+                Model = model,
+                OnPermissionRequest = PermissionHandler.ApproveAll
+            }
         );
         var response = await session.SendAndWaitAsync(
             new MessageOptions { Prompt = prompt, Mode = mode },
