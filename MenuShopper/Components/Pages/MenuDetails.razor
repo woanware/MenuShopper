@@ -117,8 +117,8 @@
         {
             _emojiListOutput = await DataService.SendCopilotPromptAsync(
                 BuildEmojiPrompt(),
-                "gpt-5.2",
-                "high",
+                "gpt-5.4",
+                "low",
                 TimeSpan.FromMinutes(3),
                 CancellationToken.None);
             if (string.IsNullOrWhiteSpace(_emojiListOutput))

@@ -20,6 +20,26 @@
 </MudPaper>
 
 <MudPaper Class="pa-4 mt-4">
+    <MudText Typo="Typo.subtitle2">Meal Suggestions</MudText>
+    <MudText Typo="Typo.body2" Class="mt-1 mb-2">Choose how many weeks of recent menus to include when building the meal suggestions prompt.</MudText>
+    <MudSelect T="int"
+               Label="Prompt lookback"
+               Dense="true"
+               @bind-Value="_mealSuggestionsLookbackWeeks"
+               @bind-Value:after="OnMealSuggestionsLookbackWeeksChangedAsync">
+        @for (var weeks = MenuShopper.Models.UserSettings.MinMealSuggestionsLookbackWeeks; weeks <= MenuShopper.Models.UserSettings.MaxMealSuggestionsLookbackWeeks; weeks++)
+        {
+            <MudSelectItem T="int" Value="@weeks">@GetMealSuggestionsLookbackLabel(weeks)</MudSelectItem>
+        }
+    </MudSelect>
+
+    @if (!string.IsNullOrWhiteSpace(_preferencesError))
+    {
+        <MudAlert Severity="Severity.Error" Class="mt-2">@_preferencesError</MudAlert>
+    }
+</MudPaper>
+
+<MudPaper Class="pa-4 mt-4">
     <MudText Typo="Typo.subtitle2">Startup</MudText>
 
     @if (!_isWindows)
@@ -44,12 +64,16 @@
 @code {
     private string _dataPath = string.Empty;
     private readonly bool _isWindows = OperatingSystem.IsWindows();
+    private MenuShopper.Models.UserSettings _userSettings = new();
+    private int _mealSuggestionsLookbackWeeks = MenuShopper.Models.UserSettings.DefaultMealSuggestionsLookbackWeeks;
+    private string? _preferencesError;
     private bool _startWithWindows;
     private string? _startupError;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         _dataPath = DataService.GetDataFolderPath();
+        await RefreshUserSettingsAsync();
 
         if (_isWindows)
             RefreshStartupState();
@@ -66,6 +90,42 @@
         {
             _startupError = ex.Message;
             _startWithWindows = false;
+        }
+    }
+
+    private async Task RefreshUserSettingsAsync()
+    {
+        try
+        {
+            _preferencesError = null;
+            _userSettings = await DataService.LoadUserSettingsAsync();
+            _mealSuggestionsLookbackWeeks = _userSettings.MealSuggestionsLookbackWeeks;
+        }
+        catch (Exception ex)
+        {
+            _preferencesError = ex.Message;
+            _userSettings = new MenuShopper.Models.UserSettings();
+            _mealSuggestionsLookbackWeeks = _userSettings.MealSuggestionsLookbackWeeks;
+        }
+    }
+
+    private async Task OnMealSuggestionsLookbackWeeksChangedAsync()
+    {
+        try
+        {
+            _preferencesError = null;
+            _userSettings.MealSuggestionsLookbackWeeks = _mealSuggestionsLookbackWeeks;
+            await DataService.SaveUserSettingsAsync(_userSettings);
+            Snackbar.Add(
+                $"Saved meal suggestions prompt lookback to {GetMealSuggestionsLookbackLabel(_mealSuggestionsLookbackWeeks).ToLowerInvariant()}.",
+                Severity.Success
+            );
+        }
+        catch (Exception ex)
+        {
+            _preferencesError = ex.Message;
+            Snackbar.Add($"Couldn't save settings: {ex.Message}", Severity.Error);
+            await RefreshUserSettingsAsync();
         }
     }
 
@@ -93,5 +153,10 @@
         }
 
         return Task.CompletedTask;
+    }
+
+    private static string GetMealSuggestionsLookbackLabel(int weeks)
+    {
+        return weeks == 1 ? "1 week" : $"{weeks} weeks";
     }
 }

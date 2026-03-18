@@ -79,7 +79,7 @@
             CancelText = "Cancel"
         };
 
-        var result = await DialogService.ShowMessageBox(options, new DialogOptions { CloseOnEscapeKey = true });
+        var result = await DialogService.ShowMessageBoxAsync(options, new DialogOptions { CloseOnEscapeKey = true });
         return result == true;
     }
 }

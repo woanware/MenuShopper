@@ -69,7 +69,6 @@
     <MudTextField @bind-Value="_mealFilterText"
                   Placeholder="Filter meals"
                   Immediate="true"
-                  TextUpdateSuppression="false"
                   Adornment="Adornment.Start"
                   AdornmentIcon="@Icons.Material.Filled.Search"
                   Class="mb-3" />
@@ -138,26 +137,20 @@
     private string _mealFilterText = string.Empty;
     private bool _useCompactMealCards = true;
     private bool _isGeneratingMealSuggestions;
+    private int _mealSuggestionsLookbackWeeks = MenuShopper.Models.UserSettings.DefaultMealSuggestionsLookbackWeeks;
     private bool _isEdit => MenuId.HasValue;
     private string PageTitleText => _isEdit ? "Edit Menu" : "Menu Planning";
     private const int MaxSelectedMealNamesToShow = 8;
-    private const string MealSuggestionsPrompt =
-        "You are a meal planning expert. Suggest exactly 10 meals from the provided meal library." +
-        "\nUse the recent menu history from the previous 3 weeks to avoid repetition." +
-        "\n\"Easy\" and \"Oven\" are normally fixed in each 7-day period, so avoid suggesting them unless they are favourite and not very recent." +
-        "\nKeep category variety so suggestions are not all from one category." +
-        "\nPrefer non-dairy meals; at most 2 suggestions may include dairy." +
-        "\nReturn only meal names, one per line, using exact names from the library." +
-        "\nDo not add numbering, bullets, or any extra text.";
 
     protected override async Task OnInitializedAsync()
     {
         await DataService.LoadMealsAsync();
         await DataService.LoadMenusAsync();
         _meals = DataService.GetMeals().OrderBy(m => m.Name).ToList();
+        var userSettings = await DataService.LoadUserSettingsAsync();
+        _mealSuggestionsLookbackWeeks = userSettings.MealSuggestionsLookbackWeeks;
         if (!_isEdit)
         {
-            var userSettings = await DataService.LoadUserSettingsAsync();
             ApplyDefaultMealSelection(userSettings);
             return;
         }
@@ -243,8 +236,8 @@
         {
             var response = await DataService.SendCopilotPromptAsync(
                 BuildMealSuggestionsPrompt(suggestionCandidates),
-                "gpt-5.2",
-                "high",
+                "gpt-5.4",
+                "medium",
                 TimeSpan.FromMinutes(3),
                 CancellationToken.None
             );
@@ -285,9 +278,18 @@
 
     private string BuildMealSuggestionsPrompt(List<MenuShopper.Models.Meal> suggestionCandidates)
     {
+        var lookbackWindowText = FormatWeekCount(_mealSuggestionsLookbackWeeks);
+        var mealSuggestionsPrompt =
+            "You are a meal planning expert. Suggest exactly 10 meals from the provided meal library." +
+            $"\nUse the recent menu history from the previous {lookbackWindowText} to avoid repetition." +
+            "\n\"Easy\" and \"Oven\" are normally fixed in each 7-day period, so avoid suggesting them unless they are favourite and not very recent." +
+            "\nKeep category variety so suggestions are not all from one category." +
+            "\nPrefer non-dairy meals; at most 2 suggestions may include dairy." +
+            "\nReturn only meal names, one per line, using exact names from the library." +
+            "\nDo not add numbering, bullets, or any extra text.";
         var mealsById = _meals.ToDictionary(meal => meal.Id, meal => meal.Name);
         var recentMenus = DataService.GetMenus()
-            .Where(menu => menu.Date >= DateTime.Today.AddDays(-21))
+            .Where(menu => menu.Date >= DateTime.Today.AddDays(-7 * _mealSuggestionsLookbackWeeks))
             .OrderByDescending(menu => menu.Date)
             .ToList();
 
@@ -310,7 +312,7 @@
             .ToList();
 
         var recentHistory = recentHistoryLines.Count == 0
-            ? "No menus in the last 21 days."
+            ? $"No menus in the last {lookbackWindowText}."
             : string.Join(Environment.NewLine, recentHistoryLines);
 
         var selectedMealNames = _selectedMeals
@@ -326,7 +328,7 @@
             .OrderBy(meal => meal.Name)
             .Select(meal => $"{meal.Name} | Category: {meal.Category} | Dairy: {(meal.IsDairy ? "Yes" : "No")} | Favourite: {(meal.IsFavourite ? "Yes" : "No")}");
 
-        return $"{MealSuggestionsPrompt}\n\nAlready selected meals (do not suggest): {selectedMealsText}\n\nRecent menu history (last 21 days):\n{recentHistory}\n\nMeal library:\n{string.Join(Environment.NewLine, mealLibrary)}";
+        return $"{mealSuggestionsPrompt}\n\nAlready selected meals (do not suggest): {selectedMealsText}\n\nRecent menu history (last {lookbackWindowText}):\n{recentHistory}\n\nMeal library:\n{string.Join(Environment.NewLine, mealLibrary)}";
     }
 
     private bool TryNormalizeMealSuggestions(string output, List<MenuShopper.Models.Meal> suggestionCandidates, out string normalizedOutput, out string errorMessage)
@@ -428,6 +430,11 @@
             text = text[(bracketIndex + 1)..].Trim();
 
         return text;
+    }
+
+    private static string FormatWeekCount(int weeks)
+    {
+        return weeks == 1 ? "1 week" : $"{weeks} weeks";
     }
 
     private bool IsMealSelected(MenuShopper.Models.Meal meal) => _selectedMeals.Contains(meal);

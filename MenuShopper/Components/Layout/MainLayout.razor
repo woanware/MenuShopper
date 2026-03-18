@@ -113,7 +113,7 @@
             CancelText = "No thanks"
         };
 
-        var result = await DialogService.ShowMessageBox(options, new DialogOptions { CloseOnEscapeKey = true });
+        var result = await DialogService.ShowMessageBoxAsync(options, new DialogOptions { CloseOnEscapeKey = true });
 
         if (result == true)
         {
