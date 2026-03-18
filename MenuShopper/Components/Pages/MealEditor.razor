@@ -235,8 +235,8 @@
         {
             var response = await DataService.SendCopilotPromptAsync(
                 $"{RecipeIngredientsPrompt}\n{recipeText}",
-                "gpt-5.2",
-                "high",
+                "gpt-5.4",
+                "medium",
                 TimeSpan.FromMinutes(3),
                 CancellationToken.None
             );

@@ -48,6 +48,7 @@ MenuShopper is a local-first meal planning application for building weekly menus
 
 ### Settings
 - View the exact local data folder path used by the app.
+- Configure how many weeks of recent menu history Meal Suggestions should use (1-8 weeks).
 - On Windows, optionally enable/disable starting MenuShopper with Windows.
 
 ## 🤖 Copilot integration
@@ -110,7 +111,7 @@ To run on a different port, update `Urls` in `appsettings.json`, for example:
 MenuShopper stores data locally using JSON files under the runtime `Data` directory (including menu files in `Data/Menus`).  
 You can see the active absolute data path in the **Settings** page.
 
-The app may also store small user settings in this folder (for example, whether you have already seen the Windows startup prompt).
+The app may also store small user settings in this folder in `settings.json` (for example, whether you have already seen the Windows startup prompt and how many weeks Meal Suggestions should look back).
 
 ## 🏗️ Tech stack
 - ASP.NET Core Razor Components (.NET 10)

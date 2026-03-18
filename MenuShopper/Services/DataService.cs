@@ -9,7 +9,8 @@ public class DataService : IAsyncDisposable
     private const string MealsFileName = "meals.json";
     private const string CategoriesFileName = "categories.json";
     private const string MenusFolderName = "Menus";
-    private const string UserSettingsFileName = "user-settings.json";
+    private const string SettingsFileName = "settings.json";
+    private const string LegacyUserSettingsFileName = "user-settings.json";
     private static readonly string[] SeedDefaultMealNames = ["Oven", "Easy"];
 
     private readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
@@ -25,7 +26,8 @@ public class DataService : IAsyncDisposable
     private string MealsFilePath => Path.Combine(BaseDataPath, MealsFileName);
     private string MenusFolderPath => Path.Combine(BaseDataPath, MenusFolderName);
     private string CategoriesFilePath => Path.Combine(BaseDataPath, CategoriesFileName);
-    private string UserSettingsFilePath => Path.Combine(BaseDataPath, UserSettingsFileName);
+    private string SettingsFilePath => Path.Combine(BaseDataPath, SettingsFileName);
+    private string LegacyUserSettingsFilePath => Path.Combine(BaseDataPath, LegacyUserSettingsFileName);
 
     public async Task<List<Meal>> LoadMealsAsync()
     {
@@ -253,35 +255,36 @@ public class DataService : IAsyncDisposable
         try
         {
             Directory.CreateDirectory(BaseDataPath);
+            MigrateLegacyUserSettingsFile();
 
-            if (!File.Exists(UserSettingsFilePath))
+            if (!File.Exists(SettingsFilePath))
             {
                 var defaultSettings = new UserSettings();
-                EnsureDefaultMealNames(defaultSettings);
+                EnsureUserSettingsDefaults(defaultSettings);
                 var defaultJson = JsonSerializer.Serialize(defaultSettings, _jsonOptions);
-                await File.WriteAllTextAsync(UserSettingsFilePath, defaultJson);
+                await File.WriteAllTextAsync(SettingsFilePath, defaultJson);
                 return defaultSettings;
             }
 
-            var json = await File.ReadAllTextAsync(UserSettingsFilePath);
+            var json = await File.ReadAllTextAsync(SettingsFilePath);
             try
             {
                 var settings = JsonSerializer.Deserialize<UserSettings>(json) ?? new UserSettings();
-                if (EnsureDefaultMealNames(settings))
+                if (EnsureUserSettingsDefaults(settings))
                 {
                     var normalizedJson = JsonSerializer.Serialize(settings, _jsonOptions);
-                    await File.WriteAllTextAsync(UserSettingsFilePath, normalizedJson);
+                    await File.WriteAllTextAsync(SettingsFilePath, normalizedJson);
                 }
 
                 return settings;
             }
             catch (JsonException ex)
             {
-                Console.WriteLine($"Invalid user settings JSON at '{UserSettingsFilePath}': {ex.Message}");
+                Console.WriteLine($"Invalid user settings JSON at '{SettingsFilePath}': {ex.Message}");
                 var defaultSettings = new UserSettings();
-                EnsureDefaultMealNames(defaultSettings);
+                EnsureUserSettingsDefaults(defaultSettings);
                 var defaultJson = JsonSerializer.Serialize(defaultSettings, _jsonOptions);
-                await File.WriteAllTextAsync(UserSettingsFilePath, defaultJson);
+                await File.WriteAllTextAsync(SettingsFilePath, defaultJson);
                 return defaultSettings;
             }
         }
@@ -297,14 +300,32 @@ public class DataService : IAsyncDisposable
         try
         {
             Directory.CreateDirectory(BaseDataPath);
-            EnsureDefaultMealNames(settings);
+            MigrateLegacyUserSettingsFile();
+            EnsureUserSettingsDefaults(settings);
             var json = JsonSerializer.Serialize(settings, _jsonOptions);
-            await File.WriteAllTextAsync(UserSettingsFilePath, json);
+            await File.WriteAllTextAsync(SettingsFilePath, json);
         }
         finally
         {
             _userSettingsLock.Release();
         }
+    }
+
+    private void MigrateLegacyUserSettingsFile()
+    {
+        if (File.Exists(SettingsFilePath) || !File.Exists(LegacyUserSettingsFilePath))
+            return;
+
+        File.Move(LegacyUserSettingsFilePath, SettingsFilePath);
+    }
+
+    private static bool EnsureUserSettingsDefaults(UserSettings settings)
+    {
+        var changed = EnsureDefaultMealNames(settings);
+        if (EnsureMealSuggestionsLookbackWeeks(settings))
+            changed = true;
+
+        return changed;
     }
 
     private static bool EnsureDefaultMealNames(UserSettings settings)
@@ -323,6 +344,20 @@ public class DataService : IAsyncDisposable
             settings.DefaultMealNames = normalized;
 
         return changed;
+    }
+
+    private static bool EnsureMealSuggestionsLookbackWeeks(UserSettings settings)
+    {
+        var normalized = Math.Clamp(
+            settings.MealSuggestionsLookbackWeeks,
+            UserSettings.MinMealSuggestionsLookbackWeeks,
+            UserSettings.MaxMealSuggestionsLookbackWeeks
+        );
+        if (settings.MealSuggestionsLookbackWeeks == normalized)
+            return false;
+
+        settings.MealSuggestionsLookbackWeeks = normalized;
+        return true;
     }
 
     public async ValueTask DisposeAsync()
