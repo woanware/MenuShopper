@@ -1,17 +1,21 @@
 .meal-card {
     border: 1px solid var(--mud-palette-lines-default);
-    border-radius: var(--mud-default-borderradius);
+    border-radius: var(--ms-radius-md);
     cursor: pointer;
-    transition: border-color 150ms ease, box-shadow 150ms ease;
+    background: var(--ms-surface);
+    transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease, background-color 160ms ease;
 }
 
 .meal-card:hover {
     border-color: var(--mud-palette-primary);
+    box-shadow: var(--ms-shadow-sm);
+    transform: translateY(-2px);
 }
 
 .meal-card-selected {
     border-color: var(--mud-palette-primary);
-    box-shadow: 0 0 0 1px var(--mud-palette-primary);
+    background: var(--ms-primary-wash);
+    box-shadow: 0 0 0 1px var(--mud-palette-primary), var(--ms-shadow-sm);
 }
 
 .meal-card-chip {
@@ -21,4 +25,12 @@
 .meal-card-chip .mud-chip-label {
     font-size: 0.75rem;
     padding-inline: 8px;
+}
+
+.ms-planner-header {
+    position: sticky;
+    top: 64px;
+    z-index: 5;
+    background: var(--ms-surface);
+    box-shadow: 0 1px 0 var(--ms-line);
 }

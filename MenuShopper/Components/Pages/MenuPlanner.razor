@@ -5,18 +5,23 @@
 
 <PageTitle>@PageTitleText</PageTitle>
 
-<MudPaper Class="pa-4 mb-4" Style="position: sticky; top: 64px; z-index: 5; background-color: var(--mud-palette-surface);">
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-            <MudText Typo="Typo.h5">@PageTitleText</MudText>
-            <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small">@_selectedMeals.Count selected</MudChip>
+<MudPaper Class="ms-page-header ms-planner-header pa-5 mb-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2 ms-toolbar">
+        <MudStack Spacing="1">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudText Typo="Typo.h5" Class="ms-page-title">@PageTitleText</MudText>
+                <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled" Size="Size.Small">@_selectedMeals.Count selected</MudChip>
+            </MudStack>
+            <MudText Typo="Typo.body2" Class="ms-page-copy">Choose meals, set the date, and turn the menu into a shopping list.</MudText>
         </MudStack>
         <MudStack Row="true" Spacing="2">
             @if (_isEdit)
             {
                 <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Filled" OnClick="GoBackFromEdit" />
             }
-            <MudIconButton Icon="@(_isEdit ? Icons.Material.Filled.Save : Icons.Material.Filled.Check)" Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveMenuAsync" Disabled="@(!_selectedMeals.Any())" />
+            <MudButton StartIcon="@(_isEdit ? Icons.Material.Filled.Save : Icons.Material.Filled.Check)" Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveMenuAsync" Disabled="@(!_selectedMeals.Any())">
+                @(_isEdit ? "Save menu" : "Create list")
+            </MudButton>
         </MudStack>
     </MudStack>
     @if (_selectedMeals.Any())
@@ -39,12 +44,17 @@
     </MudStack>
 </MudPaper>
 
-<MudPaper Class="pa-4 mb-4">
+<MudPaper Class="ms-panel pa-4 mb-4">
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-        <MudText Typo="Typo.subtitle1">Meal Suggestions</MudText>
-        <MudIconButton Icon="@Icons.Material.Filled.RestaurantMenu" Variant="Variant.Filled" Color="Color.Primary"
-                       aria-label="Suggest 10 meals"
-                       Disabled="_isGeneratingMealSuggestions" OnClick="GenerateMealSuggestionsAsync" />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.subtitle1">Meal suggestions</MudText>
+            <MudText Typo="Typo.body2" Class="ms-muted">Ask Copilot for ideas using your recent menu history.</MudText>
+        </MudStack>
+        <MudButton StartIcon="@Icons.Material.Filled.RestaurantMenu" Variant="Variant.Filled" Color="Color.Primary"
+                   aria-label="Suggest 10 meals"
+                   Disabled="_isGeneratingMealSuggestions" OnClick="GenerateMealSuggestionsAsync">
+            Suggest meals
+        </MudButton>
     </MudStack>
     @if (_isGeneratingMealSuggestions)
     {
@@ -52,8 +62,8 @@
     }
     @if (!string.IsNullOrWhiteSpace(_mealSuggestionsOutput))
     {
-        <MudPaper Class="pa-3 mt-2" Style="border: 1px solid var(--mud-palette-lines-default); border-radius: var(--mud-default-borderradius);">
-            <MudText Typo="Typo.body2" Style="white-space: pre-line; font-family: 'Roboto Mono', monospace;">@_mealSuggestionsOutput</MudText>
+        <MudPaper Class="ms-output pa-3 mt-2">
+            <MudText Typo="Typo.body2" Class="ms-mono" Style="white-space: pre-line;">@_mealSuggestionsOutput</MudText>
         </MudPaper>
     }
     @if (!string.IsNullOrWhiteSpace(_mealSuggestionsError))
@@ -62,8 +72,12 @@
     }
 </MudPaper>
 
-<MudPaper Class="pa-4">
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.FlexEnd" Class="mb-2">
+<MudPaper Class="ms-panel pa-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3 ms-toolbar">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.subtitle1">Meal library</MudText>
+            <MudText Typo="Typo.body2" Class="ms-muted">Tap cards to add meals to this menu.</MudText>
+        </MudStack>
         <MudSwitch T="bool" @bind-Value="_useCompactMealCards" Color="Color.Primary" Label="Compact cards" />
     </MudStack>
     <MudTextField @bind-Value="_mealFilterText"

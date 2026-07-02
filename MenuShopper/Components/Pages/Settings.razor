@@ -5,21 +5,24 @@
 
 <PageTitle>Settings</PageTitle>
 
-<MudPaper Class="pa-4 mb-4">
+<MudPaper Class="ms-page-header pa-5 mb-4">
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-            <MudText Typo="Typo.h5">Settings</MudText>
-            <MudChip T="string" Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Small">Preferences</MudChip>
+        <MudStack Spacing="1">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudText Typo="Typo.h5" Class="ms-page-title">Settings</MudText>
+                <MudChip T="string" Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Small">Preferences</MudChip>
+            </MudStack>
+            <MudText Typo="Typo.body2" Class="ms-page-copy">Tune startup behavior and how Copilot builds suggestions.</MudText>
         </MudStack>
     </MudStack>
 </MudPaper>
 
-<MudPaper Class="pa-4">
+<MudPaper Class="ms-panel pa-4">
     <MudText Typo="Typo.subtitle2">Data folder</MudText>
     <MudText Typo="Typo.body2" Class="mt-1">@_dataPath</MudText>
 </MudPaper>
 
-<MudPaper Class="pa-4 mt-4">
+<MudPaper Class="ms-panel pa-4 mt-4">
     <MudText Typo="Typo.subtitle2">Meal Suggestions</MudText>
     <MudText Typo="Typo.body2" Class="mt-1 mb-2">Choose how many weeks of recent menus to include when building the meal suggestions prompt.</MudText>
     <MudSelect T="int"
@@ -39,7 +42,7 @@
     }
 </MudPaper>
 
-<MudPaper Class="pa-4 mt-4">
+<MudPaper Class="ms-panel pa-4 mt-4">
     <MudText Typo="Typo.subtitle2">Startup</MudText>
 
     @if (!_isWindows)

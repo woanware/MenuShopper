@@ -5,35 +5,56 @@
 
 <PageTitle>Menus</PageTitle>
 
-<MudPaper Class="pa-4 mb-4">
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-            <MudText Typo="Typo.h5">Menus</MudText>
-            <MudChip T="string" Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Small">@_menus.Count total</MudChip>
+<MudPaper Class="ms-page-header pa-5 mb-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="ms-toolbar">
+        <MudStack Spacing="1">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudText Typo="Typo.h5" Class="ms-page-title">Menus</MudText>
+                <MudChip T="string" Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Small">@_menus.Count total</MudChip>
+            </MudStack>
+            <MudText Typo="Typo.body2" Class="ms-page-copy">Plan a date, pick meals, and generate the list in one pass.</MudText>
         </MudStack>
-        <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Filled" Href="/menus/new" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Href="/menus/new">
+            New menu
+        </MudButton>
     </MudStack>
 </MudPaper>
 
-<MudTable Items="_menus" Hover="true" Dense="true">
-    <HeaderContent>
-        <MudTh>Date</MudTh>
-        <MudTh>Meals</MudTh>
-        <MudTh>Items</MudTh>
-        <MudTh></MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="Date">@context.DisplayDate</MudTd>
-        <MudTd DataLabel="Meals">@context.MealCountText</MudTd>
-        <MudTd DataLabel="Items">@context.ItemCountText</MudTd>
-        <MudTd>
-            <MudIconButton Icon="@Icons.Material.Filled.Edit" Href="@($"/menus/edit/{context.Id}")" />
-            <MudIconButton Icon="@Icons.Material.Filled.Info" Href="@($"/menus/{context.Id}")" />
-            <MudIconButton Icon="@Icons.Material.Filled.ShoppingCart" Href="@($"/shopping-lists/{context.Id}")" />            
-            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => DeleteMenuAsync(context)" />
-        </MudTd>
-    </RowTemplate>
-</MudTable>
+@if (_menus.Count == 0)
+{
+    <MudPaper Class="ms-empty-state pa-6">
+        <MudAvatar Class="ms-empty-icon" Size="Size.Large">
+            <MudIcon Icon="@Icons.Material.Filled.EventNote" />
+        </MudAvatar>
+        <MudText Typo="Typo.h5" Class="ms-page-title">No menus planned yet</MudText>
+        <MudText Typo="Typo.body2" Class="ms-page-copy">Create a menu to lock in meals and generate a shopping list automatically.</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Href="/menus/new">
+            New menu
+        </MudButton>
+    </MudPaper>
+}
+else
+{
+    <MudTable Items="_menus" Hover="true" Dense="true">
+        <HeaderContent>
+            <MudTh>Date</MudTh>
+            <MudTh>Meals</MudTh>
+            <MudTh>Items</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Date">@context.DisplayDate</MudTd>
+            <MudTd DataLabel="Meals">@context.MealCountText</MudTd>
+            <MudTd DataLabel="Items">@context.ItemCountText</MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Href="@($"/menus/edit/{context.Id}")" />
+                <MudIconButton Icon="@Icons.Material.Filled.Info" Href="@($"/menus/{context.Id}")" />
+                <MudIconButton Icon="@Icons.Material.Filled.ShoppingCart" Href="@($"/shopping-lists/{context.Id}")" />            
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => DeleteMenuAsync(context)" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
 
 @code {
     private List<MenuShopper.Models.Menu> _menus = [];

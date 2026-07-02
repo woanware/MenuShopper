@@ -9,13 +9,19 @@
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<MudLayout>
-    <MudAppBar Color="Color.Dark" Elevation="1">
-        <MudText Typo="Typo.h6">Menu Shopper</MudText>
+<MudLayout Class="ms-shell">
+    <MudAppBar Color="Color.Default" Elevation="0" Class="ms-appbar">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="ms-brand">
+            <MudAvatar Size="Size.Small" Class="ms-brand-mark">M</MudAvatar>
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.subtitle1" Class="ms-brand-title">MenuShopper</MudText>
+                <MudText Typo="Typo.caption" Class="ms-brand-subtitle">Meals, menus, lists</MudText>
+            </MudStack>
+        </MudStack>
     </MudAppBar>
 
-    <MudDrawer Open="true" Variant="DrawerVariant.Mini" Elevation="1">
-        <MudNavMenu>
+    <MudDrawer Open="true" Variant="DrawerVariant.Mini" Elevation="0" Class="ms-drawer">
+        <MudNavMenu Class="ms-nav">
             <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
             <MudNavLink Href="/meals" Icon="@Icons.Material.Filled.Restaurant">Meals</MudNavLink>
             <MudNavLink Href="/menus" Icon="@Icons.Material.Filled.EventNote">Menus</MudNavLink>
@@ -24,8 +30,8 @@
         </MudNavMenu>
     </MudDrawer>
 
-    <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.False" Class="mt-6">
+    <MudMainContent Class="ms-main">
+        <MudContainer MaxWidth="MaxWidth.False" Class="ms-container">
             @Body
         </MudContainer>
     </MudMainContent>
@@ -36,21 +42,64 @@
     {
         PaletteDark = new PaletteDark
         {
-            Primary = "#9CA3AF",
-            PrimaryDarken = "#6B7280",
-            PrimaryLighten = "#D1D5DB",
-            Secondary = "#6B7280",
-            Background = "#0B0E11",
-            Surface = "#14181D",
-            AppbarBackground = "#111418",
-            AppbarText = "#F9FAFB",
-            DrawerBackground = "#111418",
-            DrawerText = "#F9FAFB",
-            DrawerIcon = "#F9FAFB",
-            TextPrimary = "#F9FAFB",
-            TextSecondary = "#E5E7EB",
-            ActionDefault = "#F3F4F6",
-            LinesDefault = "#2A2F36"
+            Primary = "#9BB7FF",
+            PrimaryDarken = "#7897E8",
+            PrimaryLighten = "#B8C9FF",
+            Secondary = "#A8B0BD",
+            Background = "#0A0C0F",
+            Surface = "#15181D",
+            AppbarBackground = "#101318",
+            AppbarText = "#F3F5F7",
+            DrawerBackground = "#0D1014",
+            DrawerText = "#C4CAD3",
+            DrawerIcon = "#8C95A3",
+            TextPrimary = "#F3F5F7",
+            TextSecondary = "#B5BDC8",
+            ActionDefault = "#B5BDC8",
+            LinesDefault = "#2A3038",
+            Success = "#7DD3A8",
+            Warning = "#E4B45F",
+            Error = "#F08A9B"
+        },
+        Typography = new Typography
+        {
+            Default = new DefaultTypography
+            {
+                FontFamily = ["Segoe UI Variable", "Segoe UI", "system-ui", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+                FontSize = "0.95rem",
+                LineHeight = "1.5",
+                LetterSpacing = "-0.01em"
+            },
+            H4 = new H4Typography
+            {
+                FontWeight = "760",
+                FontSize = "2rem",
+                LineHeight = "1.12",
+                LetterSpacing = "-0.035em"
+            },
+            H5 = new H5Typography
+            {
+                FontWeight = "720",
+                FontSize = "1.45rem",
+                LineHeight = "1.18",
+                LetterSpacing = "-0.025em"
+            },
+            Subtitle1 = new Subtitle1Typography
+            {
+                FontWeight = "680",
+                LetterSpacing = "-0.015em"
+            },
+            Subtitle2 = new Subtitle2Typography
+            {
+                FontWeight = "680",
+                LetterSpacing = "-0.01em"
+            },
+            Button = new ButtonTypography
+            {
+                FontWeight = "700",
+                TextTransform = "none",
+                LetterSpacing = "-0.01em"
+            }
         }
     };
 

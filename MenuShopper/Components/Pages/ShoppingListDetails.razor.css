@@ -1,12 +1,25 @@
 .shopping-item-card {
     border: 1px solid var(--mud-palette-lines-default);
-    border-radius: var(--mud-default-borderradius);
+    border-radius: var(--ms-radius-md);
+    background: var(--ms-surface);
+    transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease, opacity 160ms ease;
+}
+
+.shopping-item-card:hover {
+    border-color: var(--ms-line-strong);
+    box-shadow: var(--ms-shadow-sm);
+    transform: translateY(-2px);
 }
 
 .shopping-item-bought {
-    opacity: 0.65;
+    background: var(--ms-bg-alt);
+    opacity: 0.72;
 }
 
 .shopping-item-bought .shopping-item-name {
     text-decoration: line-through;
+}
+
+.shopping-item-source {
+    color: var(--ms-muted);
 }

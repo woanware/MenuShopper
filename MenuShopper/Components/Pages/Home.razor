@@ -3,31 +3,49 @@
 
 <PageTitle>Home</PageTitle>
 
-<MudText Typo="Typo.body1" Class="mb-6">Plan meals and generate shopping lists.</MudText>
+<MudPaper Class="ms-page-header pa-6 mb-5">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="ms-toolbar">
+        <MudStack Spacing="1">
+            <MudText Typo="Typo.caption" Class="ms-page-kicker">Kitchen workflow</MudText>
+            <MudText Typo="Typo.h4" Class="ms-page-title">Plan once. Shop without the scramble.</MudText>
+            <MudText Typo="Typo.body1" Class="ms-page-copy">Keep meals, menus, and shopping lists in one clean flow.</MudText>
+        </MudStack>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Href="/menus/new">
+            Plan a menu
+        </MudButton>
+    </MudStack>
+</MudPaper>
 
-<MudGrid Spacing="2">
+<MudGrid Spacing="3">
     <MudItem xs="12" sm="6" md="3">
-        <MudPaper Class="pa-4">
-            <MudText Typo="Typo.subtitle2">Total Meals</MudText>
-            <MudText Typo="Typo.h5">@_totalMeals</MudText>
+        <MudPaper Class="ms-stat-card pa-4">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
+                <MudStack Spacing="1">
+                    <MudText Typo="Typo.subtitle2" Class="ms-stat-label">Total meals</MudText>
+                    <MudText Class="ms-stat-value">@_totalMeals</MudText>
+                </MudStack>
+                <MudAvatar Size="Size.Small" Class="ms-stat-icon">
+                    <MudIcon Icon="@Icons.Material.Filled.Restaurant" Size="Size.Small" />
+                </MudAvatar>
+            </MudStack>
         </MudPaper>
     </MudItem>
     <MudItem xs="12" sm="6" md="3">
-        <MudPaper Class="pa-4">
+        <MudPaper Class="ms-stat-card pa-4">
             <MudText Typo="Typo.subtitle2">Favourites</MudText>
-            <MudText Typo="Typo.h5">@_favouriteMeals</MudText>
+            <MudText Class="ms-stat-value">@_favouriteMeals</MudText>
         </MudPaper>
     </MudItem>
     <MudItem xs="12" sm="6" md="3">
-        <MudPaper Class="pa-4">
-            <MudText Typo="Typo.subtitle2">Dairy Meals</MudText>
-            <MudText Typo="Typo.h5">@_dairyMeals</MudText>
+        <MudPaper Class="ms-stat-card pa-4">
+            <MudText Typo="Typo.subtitle2">Dairy meals</MudText>
+            <MudText Class="ms-stat-value">@_dairyMeals</MudText>
         </MudPaper>
     </MudItem>
     <MudItem xs="12" sm="6" md="3">
-        <MudPaper Class="pa-4">
-            <MudText Typo="Typo.subtitle2">Unique Ingredients</MudText>
-            <MudText Typo="Typo.h5">@_uniqueIngredients</MudText>
+        <MudPaper Class="ms-stat-card pa-4">
+            <MudText Typo="Typo.subtitle2">Unique ingredients</MudText>
+            <MudText Class="ms-stat-value">@_uniqueIngredients</MudText>
         </MudPaper>
     </MudItem>
 </MudGrid>

@@ -4,40 +4,61 @@
 
 <PageTitle>Meals</PageTitle>
 
-<MudPaper Class="pa-4 mb-4">
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-            <MudText Typo="Typo.h5">Meals</MudText>
-            <MudChip T="string" Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Small">@_meals.Count total</MudChip>
+<MudPaper Class="ms-page-header pa-5 mb-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="ms-toolbar">
+        <MudStack Spacing="1">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudText Typo="Typo.h5" Class="ms-page-title">Meals</MudText>
+                <MudChip T="string" Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Small">@_meals.Count total</MudChip>
+            </MudStack>
+            <MudText Typo="Typo.body2" Class="ms-page-copy">Your reusable meal library for fast menu planning.</MudText>
         </MudStack>
-        <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Filled" Href="/meals/new" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Href="/meals/new">
+            Add meal
+        </MudButton>
     </MudStack>
 </MudPaper>
 
-<MudTable Items="_meals" Hover="true" Dense="true">
-    <HeaderContent>
-        <MudTh>Name</MudTh>
-        <MudTh>Category</MudTh>
-        <MudTh>Dairy</MudTh>
-        <MudTh>Ingredients</MudTh>
-        <MudTh>Favourite</MudTh>
-        <MudTh></MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="Name">@context.Name</MudTd>
-        <MudTd DataLabel="Category">@context.Category</MudTd>
-        <MudTd DataLabel="Dairy">@((context.IsDairy) ? "Yes" : "No")</MudTd>
-        <MudTd DataLabel="Ingredients">@context.IngredientCount</MudTd>
-        <MudTd DataLabel="Favourite">
-            <MudIconButton Icon="@(context.IsFavourite ? Icons.Material.Filled.Star : Icons.Material.Filled.StarBorder)" Color="Color.Warning" OnClick="() => ToggleFavouriteAsync(context)" />
-        </MudTd>
-        <MudTd>
-            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Href="@($"/meals/edit/{context.Id}")" />
-            <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Href="@($"/meals/clone/{context.Id}")" />
-            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => DeleteMealAsync(context)" />
-        </MudTd>
-    </RowTemplate>
-</MudTable>
+@if (_meals.Count == 0)
+{
+    <MudPaper Class="ms-empty-state pa-6">
+        <MudAvatar Class="ms-empty-icon" Size="Size.Large">
+            <MudIcon Icon="@Icons.Material.Filled.Restaurant" />
+        </MudAvatar>
+        <MudText Typo="Typo.h5" Class="ms-page-title">Build your meal library</MudText>
+        <MudText Typo="Typo.body2" Class="ms-page-copy">Add a few reliable meals first, then menus and shopping lists become much faster.</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Href="/meals/new">
+            Add first meal
+        </MudButton>
+    </MudPaper>
+}
+else
+{
+    <MudTable Items="_meals" Hover="true" Dense="true">
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Category</MudTh>
+            <MudTh>Dairy</MudTh>
+            <MudTh>Ingredients</MudTh>
+            <MudTh>Favourite</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">@context.Name</MudTd>
+            <MudTd DataLabel="Category">@context.Category</MudTd>
+            <MudTd DataLabel="Dairy">@((context.IsDairy) ? "Yes" : "No")</MudTd>
+            <MudTd DataLabel="Ingredients">@context.IngredientCount</MudTd>
+            <MudTd DataLabel="Favourite">
+                <MudIconButton Icon="@(context.IsFavourite ? Icons.Material.Filled.Star : Icons.Material.Filled.StarBorder)" Color="Color.Warning" OnClick="() => ToggleFavouriteAsync(context)" />
+            </MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Href="@($"/meals/edit/{context.Id}")" />
+                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Href="@($"/meals/clone/{context.Id}")" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="() => DeleteMealAsync(context)" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
 
 @code {
     private List<MenuShopper.Models.Meal> _meals = [];

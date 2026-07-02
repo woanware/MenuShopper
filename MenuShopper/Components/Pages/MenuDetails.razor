@@ -4,11 +4,11 @@
 
 <PageTitle>Menu Details</PageTitle>
 
-<MudPaper Class="pa-4 mb-4">
+<MudPaper Class="ms-page-header pa-5 mb-4">
     <MudStack Spacing="2">
         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                <MudText Typo="Typo.h5">Menu Details</MudText>
+                <MudText Typo="Typo.h5" Class="ms-page-title">Menu details</MudText>
             </MudStack>
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                 <MudIconButton Icon="@Icons.Material.Filled.ShoppingCart" Variant="Variant.Filled" Color="Color.Primary" Href="@($"/shopping-lists/{MenuId}")" />
@@ -23,9 +23,12 @@
     </MudStack>
 </MudPaper>
 
-<MudPaper Class="pa-4 mb-4">
+<MudPaper Class="ms-panel pa-4 mb-4">
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-        <MudText Typo="Typo.subtitle1">Emoji list</MudText>
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.subtitle1">Emoji list</MudText>
+            <MudText Typo="Typo.body2" Class="ms-muted">Generate a quick shareable meal list.</MudText>
+        </MudStack>
         <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
             <MudIconButton Icon="@Icons.Material.Filled.EmojiEmotions" Variant="Variant.Filled" Color="Color.Primary"
                            aria-label="Generate emoji list"
@@ -40,8 +43,8 @@
     }
     @if (!string.IsNullOrWhiteSpace(_emojiListOutput))
     {
-        <MudPaper Class="pa-3 mt-2" Style="border: 1px solid var(--mud-palette-lines-default); border-radius: var(--mud-default-borderradius);">
-            <MudText Typo="Typo.body1" Style="white-space: pre-line; font-family: 'Roboto Mono', monospace;">@_emojiListOutput</MudText>
+        <MudPaper Class="ms-output pa-3 mt-2">
+            <MudText Typo="Typo.body1" Class="ms-mono" Style="white-space: pre-line;">@_emojiListOutput</MudText>
         </MudPaper>
     }
     @if (!string.IsNullOrWhiteSpace(_copilotError))
@@ -49,8 +52,6 @@
         <MudAlert Severity="Severity.Error" Class="mt-2">@_copilotError</MudAlert>
     }
 </MudPaper>
-
-<MudDivider Class="my-4" />
 
 <MudTable Items="_meals" Hover="true" Dense="true">
     <HeaderContent>
