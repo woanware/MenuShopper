@@ -250,7 +250,6 @@
         {
             var response = await DataService.SendCopilotPromptAsync(
                 BuildMealSuggestionsPrompt(suggestionCandidates),
-                "gpt-5.4",
                 "medium",
                 TimeSpan.FromMinutes(3),
                 CancellationToken.None

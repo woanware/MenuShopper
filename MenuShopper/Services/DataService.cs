@@ -230,8 +230,7 @@ public class DataService : IAsyncDisposable
 
     public async Task<string> SendCopilotPromptAsync(
         string prompt,
-        string model,
-        string mode,
+        string reasoningEffort,
         TimeSpan timeout,
         CancellationToken cancellationToken
     )
@@ -239,12 +238,13 @@ public class DataService : IAsyncDisposable
         await using var session = await _copilotClient.CreateSessionAsync(
             new SessionConfig
             {
-                Model = model,
+                ReasoningEffort = reasoningEffort,
                 OnPermissionRequest = PermissionHandler.ApproveAll
-            }
+            },
+            cancellationToken
         );
         var response = await session.SendAndWaitAsync(
-            new MessageOptions { Prompt = prompt, Mode = mode },
+            new MessageOptions { Prompt = prompt },
             timeout,
             cancellationToken
         );

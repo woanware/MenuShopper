@@ -58,6 +58,9 @@ MenuShopper uses the **GitHub Copilot SDK** for:
 - emoji list generation on menu details
 - recipe text → Ingredient Extraction when creating/editing meals
 
+All three features use the Copilot CLI's default model rather than pinning a specific model ID.
+Reasoning effort is set to medium for meal suggestions and ingredient extraction, and low for emoji lists, for models that support it.
+
 ### Setup (local/dev)
 1. Get GitHub Copilot access (Copilot Pro/Business/Enterprise):  
    https://github.com/features/copilot
